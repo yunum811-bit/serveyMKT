@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - MARKETING SC</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Noto Sans Thai', sans-serif;
+            background: #f0f2f5;
+            min-height: 100vh;
+        }
+        .navbar {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+            padding: 16px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .navbar h1 { font-size: 1.2rem; }
+        .navbar .user-info { display: flex; align-items: center; gap: 12px; }
+        .navbar .user-info span { font-size: 0.9rem; }
+        .btn-logout {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.4);
+            color: #fff;
+            padding: 6px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .btn-logout:hover { background: rgba(255,255,255,0.3); }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 20px;
+            background: #fff;
+            border-radius: 10px;
+            padding: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: #666;
+            transition: all 0.3s;
+        }
+        .tab-btn.active { background: #6c63ff; color: #fff; }
+        .tab-btn:hover:not(.active) { background: #f5f3ff; }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .stat-card .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #6c63ff;
+        }
+        .stat-card .stat-label {
+            font-size: 0.85rem;
+            color: #888;
+            margin-top: 4px;
+        }
+
+        /* Filter */
+        .filter-bar {
+            background: #fff;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .filter-bar label { font-size: 0.9rem; color: #555; font-weight: 500; }
+        .filter-bar select, .filter-bar input {
+            padding: 8px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 0.9rem;
+            outline: none;
+        }
+        .filter-bar select:focus, .filter-bar input:focus { border-color: #6c63ff; }
+        .btn-filter {
+            background: #6c63ff;
+            color: #fff;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 500;
+        }
+        .btn-filter:hover { background: #5a52d5; }
+
+        /* Table */
+        .table-wrapper {
+            background: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        table { width: 100%; border-collapse: collapse; }
+        th {
+            background: #f8f9fa;
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 0.85rem;
+            color: #555;
+            font-weight: 600;
+            border-bottom: 2px solid #eee;
+        }
+        td {
+            padding: 12px 16px;
+            font-size: 0.9rem;
+            border-bottom: 1px solid #f0f0f0;
+            color: #333;
+        }
+        tr:hover td { background: #f9f8ff; }
+        .badge-hot { background: #ffe0e0; color: #d32f2f; padding: 3px 10px; border-radius: 12px; font-size: 0.8rem; }
+        .badge-warm { background: #fff3e0; color: #f57c00; padding: 3px 10px; border-radius: 12px; font-size: 0.8rem; }
+        .badge-cold { background: #e3f2fd; color: #1976d2; padding: 3px 10px; border-radius: 12px; font-size: 0.8rem; }
+
+        /* User Management */
+        .form-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .form-card h3 { margin-bottom: 16px; color: #333; }
+        .form-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+        .form-row input {
+            flex: 1;
+            min-width: 180px;
+            padding: 10px 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-family: inherit;
+            outline: none;
+        }
+        .form-row input:focus { border-color: #6c63ff; }
+        .btn-add {
+            background: #4caf50;
+            color: #fff;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 500;
+        }
+        .btn-add:hover { background: #43a047; }
+        .btn-delete {
+            background: #e74c3c;
+            color: #fff;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        .btn-delete:hover { background: #c0392b; }
+        .btn-reset-pw {
+            background: #ff9800;
+            color: #fff;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            margin-right: 4px;
+        }
+        .btn-reset-pw:hover { background: #f57c00; }
+        .btn-edit {
+            background: #2196f3;
+            color: #fff;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            margin-right: 4px;
+        }
+        .btn-edit:hover { background: #1976d2; }
+
+        /* Login Page */
+        .login-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        .login-box {
+            background: #fff;
+            border-radius: 16px;
+            padding: 40px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        }
+        .login-box h2 { text-align: center; margin-bottom: 8px; color: #333; }
+        .login-box p { text-align: center; color: #888; margin-bottom: 24px; font-size: 0.9rem; }
+        .login-box form { width: 100%; }
+        .login-box input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            outline: none;
+        }
+        .login-box input:focus { border-color: #6c63ff; }
+        .btn-login {
+            width: 100%;
+            background: #6c63ff;
+            color: #fff;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            margin-top: 8px;
+        }
+        .btn-login:hover { background: #5a52d5; }
+        .login-error { color: #e74c3c; font-size: 0.85rem; text-align: center; margin-top: 10px; }
+        .hidden { display: none !important; }
+
+        @media (max-width: 768px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .filter-bar { flex-direction: column; align-items: stretch; }
+            .table-wrapper { overflow-x: auto; }
+            table { min-width: 700px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Login Overlay -->
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-box">
+            <h2>MARKETING SC</h2>
+            <p>เข้าสู่ระบบเพื่อจัดการรายงาน</p>
+            <form id="adminLoginForm">
+                <input type="text" id="loginUsername" placeholder="ชื่อผู้ใช้" autocomplete="username">
+                <input type="password" id="loginPassword" placeholder="รหัสผ่าน" autocomplete="current-password">
+                <button type="submit" class="btn-login">เข้าสู่ระบบ</button>
+            </form>
+            <p class="login-error hidden" id="loginError"></p>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="mainApp" class="hidden">
+        <nav class="navbar">
+            <h1>📊 Admin Dashboard</h1>
+            <div class="user-info">
+                <a href="/" style="color:#fff;text-decoration:none;background:rgba(255,255,255,0.2);padding:6px 14px;border-radius:6px;font-size:0.85rem;margin-right:8px;">📝 กรอกฟอร์ม</a>
+                <span id="currentUser"></span>
+                <button class="btn-logout" onclick="logout()">ออกจากระบบ</button>
+            </div>
+        </nav>
+
+        <div class="container">
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('reports')">📋 รายงานประจำเดือน</button>
+                <button class="tab-btn" onclick="switchTab('users')">👥 จัดการผู้ใช้</button>
+                <button class="tab-btn" onclick="switchTab('questions')">❓ จัดการคำถาม</button>
+            </div>
+
+            <!-- Reports Tab -->
+            <div class="tab-content active" id="tab-reports">
+                <!-- Filter -->
+                <div class="filter-bar">
+                    <label>เดือน:</label>
+                    <select id="filterMonth">
+                        <option value="">ทั้งหมด</option>
+                        <option value="1">มกราคม</option>
+                        <option value="2">กุมภาพันธ์</option>
+                        <option value="3">มีนาคม</option>
+                        <option value="4">เมษายน</option>
+                        <option value="5">พฤษภาคม</option>
+                        <option value="6">มิถุนายน</option>
+                        <option value="7">กรกฎาคม</option>
+                        <option value="8">สิงหาคม</option>
+                        <option value="9">กันยายน</option>
+                        <option value="10">ตุลาคม</option>
+                        <option value="11">พฤศจิกายน</option>
+                        <option value="12">ธันวาคม</option>
+                    </select>
+                    <label>ปี:</label>
+                    <select id="filterYear">
+                        <option value="2026">2026</option>
+                        <option value="2025">2025</option>
+                        <option value="2024">2024</option>
+                    </select>
+                    <label>เจ้าหน้าที่:</label>
+                    <select id="filterOfficer">
+                        <option value="">ทั้งหมด</option>
+                        <option value="นางสาว มนัสสนันท์ ตลับเพชร">นางสาว มนัสสนันท์ ตลับเพชร</option>
+                        <option value="นาย ณัฐวุฒิ ฉิมไทย">นาย ณัฐวุฒิ ฉิมไทย</option>
+                        <option value="นาย พิทักษ์พงษ์ งามจตุรภัทร์">นาย พิทักษ์พงษ์ งามจตุรภัทร์</option>
+                    </select>
+                    <button class="btn-filter" onclick="loadReports()">🔍 ค้นหา</button>
+                    <button class="btn-filter" style="background:#217346;" onclick="exportExcel()">📥 Export Excel</button>
+                </div>
+
+                <!-- Stats -->
+                <div class="stats-grid" id="statsGrid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="statTotal">0</div>
+                        <div class="stat-label">รายงานทั้งหมด</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statCompanies">0</div>
+                        <div class="stat-label">บริษัทที่เข้าพบ</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statDays">0</div>
+                        <div class="stat-label">วันที่ออกปฏิบัติงาน</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statRating">-</div>
+                        <div class="stat-label">คะแนนเฉลี่ย</div>
+                    </div>
+                </div>
+
+                <!-- Table -->
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>วันที่</th>
+                                <th>เจ้าหน้าที่</th>
+                                <th>บริษัท/สถานที่</th>
+                                <th>วัตถุประสงค์</th>
+                                <th>ระดับดีล</th>
+                                <th>คะแนน</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportsTable"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Users Tab -->
+            <div class="tab-content" id="tab-users">
+                <div class="form-card">
+                    <h3>➕ เพิ่มผู้ใช้ใหม่</h3>
+                    <div class="form-row">
+                        <input type="text" id="newUsername" placeholder="ชื่อผู้ใช้ (username)">
+                        <input type="password" id="newPassword" placeholder="รหัสผ่าน">
+                        <input type="text" id="newFullName" placeholder="ชื่อ-นามสกุล">
+                        <button class="btn-add" onclick="addUser()">เพิ่มผู้ใช้</button>
+                    </div>
+                    <p id="userMsg" style="font-size:0.85rem; margin-top:8px;"></p>
+                </div>
+
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>ชื่อผู้ใช้</th>
+                                <th>ชื่อ-นามสกุล</th>
+                                <th>สิทธิ์</th>
+                                <th>วันที่สร้าง</th>
+                                <th>จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTable"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Questions Tab -->
+            <div class="tab-content" id="tab-questions">
+                <div class="form-card">
+                    <h3>➕ เพิ่มคำถามใหม่</h3>
+                    <div class="form-row">
+                        <input type="text" id="newQLabel" placeholder="คำถาม" style="flex:2;">
+                        <select id="newQType" style="padding:10px;border:2px solid #e0e0e0;border-radius:8px;font-family:inherit;">
+                            <option value="text">ข้อความ (Text)</option>
+                            <option value="textarea">ข้อความยาว (Textarea)</option>
+                            <option value="radio">ตัวเลือกเดียว (Radio)</option>
+                            <option value="checkbox">หลายตัวเลือก (Checkbox)</option>
+                            <option value="number">ตัวเลข (Number)</option>
+                            <option value="date">วันที่ (Date)</option>
+                        </select>
+                        <label style="display:flex;align-items:center;gap:4px;font-size:0.85rem;white-space:nowrap;">
+                            <input type="checkbox" id="newQRequired"> จำเป็น
+                        </label>
+                        <button class="btn-add" onclick="addQuestion()">เพิ่มคำถาม</button>
+                    </div>
+                    <div class="form-row" id="optionsRow" style="display:none;">
+                        <input type="text" id="newQOptions" placeholder="ตัวเลือก (คั่นด้วยเครื่องหมาย , เช่น: ตัวเลือก1, ตัวเลือก2, ตัวเลือก3)" style="flex:1;">
+                    </div>
+                    <p id="questionMsg" style="font-size:0.85rem; margin-top:8px;"></p>
+                </div>
+
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ลำดับ</th>
+                                <th>คำถาม</th>
+                                <th>ประเภท</th>
+                                <th>ตัวเลือก</th>
+                                <th>จำเป็น</th>
+                                <th>สถานะ</th>
+                                <th>จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="questionsTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API = '';
+        let token = localStorage.getItem('token');
+        let currentUser = null;
+
+        // Bind login form
+        document.getElementById('adminLoginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            login();
+        });
+
+        // Check auth on load
+        if (token) {
+            checkAuth();
+        }
+
+        async function checkAuth() {
+            try {
+                const res = await fetch(API + '/api/auth/me', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (res.ok) {
+                    currentUser = await res.json();
+                    showApp();
+                } else {
+                    localStorage.removeItem('token');
+                    token = null;
+                    showLogin();
+                }
+            } catch (e) {
+                showLogin();
+            }
+        }
+
+        async function login() {
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const errorEl = document.getElementById('loginError');
+            errorEl.classList.add('hidden');
+
+            if (!username || !password) {
+                errorEl.textContent = 'กรุณากรอกชื่อผู้ใช้และรหัสผ่าน';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+
+            try {
+                const res = await fetch(API + '/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    token = data.token;
+                    currentUser = data.user;
+                    localStorage.setItem('token', token);
+                    showApp();
+                } else {
+                    errorEl.textContent = data.error;
+                    errorEl.classList.remove('hidden');
+                }
+            } catch (e) {
+                errorEl.textContent = 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้';
+                errorEl.classList.remove('hidden');
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            token = null;
+            currentUser = null;
+            showLogin();
+        }
+
+        function showLogin() {
+            document.getElementById('loginOverlay').classList.remove('hidden');
+            document.getElementById('mainApp').classList.add('hidden');
+        }
+
+        function showApp() {
+            document.getElementById('loginOverlay').classList.add('hidden');
+            document.getElementById('mainApp').classList.remove('hidden');
+            document.getElementById('currentUser').textContent = currentUser.fullName + ' (' + currentUser.role + ')';
+            // Set current month/year
+            const now = new Date();
+            document.getElementById('filterMonth').value = now.getMonth() + 1;
+            document.getElementById('filterYear').value = now.getFullYear();
+            loadReports();
+            if (currentUser.role === 'admin') {
+                loadUsers();
+                loadQuestions();
+            }
+        }
+
+        // Tabs
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('tab-' + tab).classList.add('active');
+        }
+
+        // Reports
+        async function loadReports() {
+            const month = document.getElementById('filterMonth').value;
+            const year = document.getElementById('filterYear').value;
+            const officer = document.getElementById('filterOfficer').value;
+
+            let url = API + '/api/reports?year=' + year;
+            if (month) url += '&month=' + month;
+            if (officer) url += '&officer=' + encodeURIComponent(officer);
+
+            try {
+                const res = await fetch(url, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const reports = await res.json();
+                renderReports(reports);
+                loadSummary(month, year);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function renderReports(reports) {
+            const tbody = document.getElementById('reportsTable');
+            if (reports.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#888;padding:30px;">ไม่พบข้อมูลรายงาน</td></tr>';
+                return;
+            }
+            tbody.innerHTML = reports.map(r => {
+                let badge = '';
+                if (r.dealProbability) {
+                    if (r.dealProbability.includes('สูง')) badge = '<span class="badge-hot">Hot</span>';
+                    else if (r.dealProbability.includes('ปานกลาง')) badge = '<span class="badge-warm">Warm</span>';
+                    else badge = '<span class="badge-cold">Cold</span>';
+                }
+                return `<tr style="cursor:pointer;" onclick="viewReport(${r.id})">
+                    <td>${r.workDate}</td>
+                    <td>${r.officer}</td>
+                    <td>${r.companyName}</td>
+                    <td>${r.objectives ? r.objectives.substring(0, 40) + (r.objectives.length > 40 ? '...' : '') : '-'}</td>
+                    <td>${badge || '-'}</td>
+                    <td>${r.successRating || '-'}/5</td>
+                </tr>`;
+            }).join('');
+        }
+
+        async function viewReport(id) {
+            try {
+                const res = await fetch(API + '/api/reports/' + id, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (!res.ok) return;
+                const r = await res.json();
+                const detail = `
+                    <div style="text-align:left;max-height:70vh;overflow-y:auto;">
+                        <p><strong>เจ้าหน้าที่:</strong> ${r.officer}</p>
+                        <p><strong>วันที่:</strong> ${r.workDate}</p>
+                        <p><strong>ช่วงเวลา:</strong> ${r.timeSlot}${r.startTime ? ' (' + r.startTime + ' - ' + r.endTime + ')' : ''}</p>
+                        <hr style="margin:10px 0;border:none;border-top:1px solid #eee;">
+                        <p><strong>วัตถุประสงค์:</strong> ${r.objectives || '-'}</p>
+                        ${r.objectiveOther ? '<p><strong>อื่นๆ:</strong> ' + r.objectiveOther + '</p>' : ''}
+                        <p><strong>แหล่งที่มาลูกค้า:</strong> ${r.leadSource || '-'}</p>
+                        <p><strong>ผลิตภัณฑ์:</strong> ${r.products || '-'}</p>
+                        <hr style="margin:10px 0;border:none;border-top:1px solid #eee;">
+                        <p><strong>บริษัท/สถานที่:</strong> ${r.companyName}</p>
+                        <p><strong>ผู้ติดต่อ:</strong> ${r.contactPerson}</p>
+                        <p><strong>สรุปผลหารือ:</strong></p>
+                        <p style="background:#f8f9fa;padding:10px;border-radius:6px;">${r.summary}</p>
+                        <hr style="margin:10px 0;border:none;border-top:1px solid #eee;">
+                        <p><strong>Next Step:</strong> ${r.nextSteps || '-'}</p>
+                        ${r.proposalDate ? '<p><strong>วันส่งข้อเสนอ:</strong> ' + r.proposalDate + '</p>' : ''}
+                        ${r.meetingDate ? '<p><strong>วันนัดหมาย:</strong> ' + r.meetingDate + '</p>' : ''}
+                        <p><strong>ระดับดีล:</strong> ${r.dealProbability || '-'}</p>
+                        <p><strong>มูลค่าดีล:</strong> ${r.dealValue || '-'}</p>
+                        <p><strong>คะแนนความสำเร็จ:</strong> ${r.successRating || '-'}/5</p>
+                        <p><strong>คู่แข่ง:</strong> ${r.competitors || '-'}</p>
+                        <p><strong>พื้นที่:</strong> ${r.province}${r.provinceOther ? ' (' + r.provinceOther + ')' : ''}</p>
+                        <p><strong>ผู้ตรวจสอบ:</strong> ${r.supervisor}</p>
+                        <hr style="margin:10px 0;border:none;border-top:1px solid #eee;">
+                        ${r.photo1 ? '<p><strong>ภาพ 1:</strong> ' + (r.photoDesc1 || '') + '</p><img src="/uploads/' + r.photo1 + '" style="max-width:100%;border-radius:8px;margin-bottom:10px;">' : ''}
+                        ${r.photo2 ? '<p><strong>ภาพ 2:</strong> ' + (r.photoDesc2 || '') + '</p><img src="/uploads/' + r.photo2 + '" style="max-width:100%;border-radius:8px;">' : ''}
+                    </div>
+                `;
+                showDetailModal(r.companyName + ' - ' + r.workDate, detail);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function showDetailModal(title, content) {
+            let modal = document.getElementById('detailModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'detailModal';
+                modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;';
+                modal.innerHTML = '<div style="background:#fff;border-radius:16px;padding:30px;max-width:600px;width:90%;max-height:85vh;overflow-y:auto;position:relative;"><button onclick="this.parentElement.parentElement.remove()" style="position:absolute;top:12px;right:16px;background:none;border:none;font-size:1.5rem;cursor:pointer;color:#888;">✕</button><h3 id="detailTitle" style="margin-bottom:16px;color:#333;"></h3><div id="detailContent"></div></div>';
+                document.body.appendChild(modal);
+            }
+            document.getElementById('detailTitle').textContent = title;
+            document.getElementById('detailContent').innerHTML = content;
+        }
+
+        async function loadSummary(month, year) {
+            let url = API + '/api/reports/summary?year=' + (year || '2026');
+            if (month) url += '&month=' + month;
+
+            try {
+                const res = await fetch(url, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await res.json();
+                document.getElementById('statTotal').textContent = data.summary.totalReports || 0;
+                document.getElementById('statCompanies').textContent = data.summary.totalCompanies || 0;
+                document.getElementById('statDays').textContent = data.summary.totalDays || 0;
+                document.getElementById('statRating').textContent = data.summary.avgRating ? data.summary.avgRating.toFixed(1) : '-';
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        // Users
+        async function loadUsers() {
+            try {
+                const res = await fetch(API + '/api/users', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (!res.ok) return;
+                const users = await res.json();
+                renderUsers(users);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function renderUsers(users) {
+            const tbody = document.getElementById('usersTable');
+            tbody.innerHTML = users.map(u => `<tr>
+                <td>${u.id}</td>
+                <td>${u.username}</td>
+                <td>${u.fullName}</td>
+                <td>${u.role}</td>
+                <td>${u.createdAt}</td>
+                <td>
+                    <button class="btn-edit" onclick="editUser(${u.id}, '${u.username.replace(/'/g, "\\'")}', '${u.fullName.replace(/'/g, "\\'")}', '${u.role}')">✏️ แก้ไข</button>
+                    <button class="btn-reset-pw" onclick="resetPassword(${u.id}, '${u.username}')">🔑 Reset</button>
+                    ${u.role !== 'admin' ? '<button class="btn-delete" onclick="deleteUser(' + u.id + ')">ลบ</button>' : ''}
+                </td>
+            </tr>`).join('');
+        }
+
+        async function addUser() {
+            const username = document.getElementById('newUsername').value;
+            const password = document.getElementById('newPassword').value;
+            const fullName = document.getElementById('newFullName').value;
+            const msgEl = document.getElementById('userMsg');
+
+            try {
+                const res = await fetch(API + '/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({ username, password, fullName })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    msgEl.style.color = '#4caf50';
+                    msgEl.textContent = '✓ ' + data.message;
+                    document.getElementById('newUsername').value = '';
+                    document.getElementById('newPassword').value = '';
+                    document.getElementById('newFullName').value = '';
+                    loadUsers();
+                } else {
+                    msgEl.style.color = '#e74c3c';
+                    msgEl.textContent = '✗ ' + data.error;
+                }
+            } catch (e) {
+                msgEl.style.color = '#e74c3c';
+                msgEl.textContent = '✗ ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้';
+            }
+        }
+
+        async function resetPassword(userId, username) {
+            const newPassword = prompt('ตั้งรหัสผ่านใหม่สำหรับ "' + username + '"\n(อย่างน้อย 4 ตัวอักษร):');
+            if (!newPassword) return;
+            if (newPassword.length < 4) {
+                alert('รหัสผ่านต้องมีอย่างน้อย 4 ตัวอักษร');
+                return;
+            }
+            try {
+                const res = await fetch(API + '/api/users/' + userId + '/reset-password', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({ newPassword })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    alert('✓ ' + data.message);
+                } else {
+                    alert('✗ ' + data.error);
+                }
+            } catch (e) {
+                alert('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
+            }
+        }
+
+        function editUser(id, username, fullName, role) {
+            let modal = document.getElementById('editUserModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'editUserModal';
+                modal.innerHTML = `
+                    <div style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;">
+                        <div style="background:#fff;border-radius:16px;padding:30px;max-width:450px;width:90%;position:relative;">
+                            <button onclick="document.getElementById('editUserModal').remove()" style="position:absolute;top:12px;right:16px;background:none;border:none;font-size:1.5rem;cursor:pointer;color:#888;">✕</button>
+                            <h3 style="margin-bottom:20px;color:#333;">✏️ แก้ไขข้อมูลผู้ใช้</h3>
+                            <input type="hidden" id="editUserId">
+                            <div style="margin-bottom:12px;">
+                                <label style="display:block;font-size:0.85rem;color:#555;margin-bottom:4px;">ชื่อผู้ใช้ (Username)</label>
+                                <input type="text" id="editUsername" style="width:100%;padding:10px 14px;border:2px solid #e0e0e0;border-radius:8px;font-family:inherit;outline:none;">
+                            </div>
+                            <div style="margin-bottom:12px;">
+                                <label style="display:block;font-size:0.85rem;color:#555;margin-bottom:4px;">ชื่อ-นามสกุล</label>
+                                <input type="text" id="editFullName" style="width:100%;padding:10px 14px;border:2px solid #e0e0e0;border-radius:8px;font-family:inherit;outline:none;">
+                            </div>
+                            <div style="margin-bottom:20px;">
+                                <label style="display:block;font-size:0.85rem;color:#555;margin-bottom:4px;">สิทธิ์</label>
+                                <select id="editRole" style="width:100%;padding:10px 14px;border:2px solid #e0e0e0;border-radius:8px;font-family:inherit;outline:none;">
+                                    <option value="user">user</option>
+                                    <option value="admin">admin</option>
+                                </select>
+                            </div>
+                            <p id="editUserMsg" style="font-size:0.85rem;margin-bottom:12px;"></p>
+                            <button onclick="saveEditUser()" style="width:100%;background:#6c63ff;color:#fff;border:none;padding:12px;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;font-family:inherit;">บันทึก</button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            } else {
+                modal.style.display = 'block';
+                document.body.appendChild(modal);
+            }
+            document.getElementById('editUserId').value = id;
+            document.getElementById('editUsername').value = username;
+            document.getElementById('editFullName').value = fullName;
+            document.getElementById('editRole').value = role;
+            document.getElementById('editUserMsg').textContent = '';
+        }
+
+        async function saveEditUser() {
+            const id = document.getElementById('editUserId').value;
+            const username = document.getElementById('editUsername').value.trim();
+            const fullName = document.getElementById('editFullName').value.trim();
+            const role = document.getElementById('editRole').value;
+            const msgEl = document.getElementById('editUserMsg');
+
+            if (!username || !fullName) {
+                msgEl.style.color = '#e74c3c';
+                msgEl.textContent = '✗ กรุณากรอกข้อมูลให้ครบ';
+                return;
+            }
+
+            try {
+                const res = await fetch(API + '/api/users/' + id, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({ username, fullName, role })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    document.getElementById('editUserModal').remove();
+                    loadUsers();
+                } else {
+                    msgEl.style.color = '#e74c3c';
+                    msgEl.textContent = '✗ ' + data.error;
+                }
+            } catch (e) {
+                msgEl.style.color = '#e74c3c';
+                msgEl.textContent = '✗ ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้';
+            }
+        }
+
+        async function deleteUser(id) {
+            if (!confirm('ต้องการลบผู้ใช้นี้หรือไม่?')) return;
+            try {
+                const res = await fetch(API + '/api/users/' + id, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (res.ok) loadUsers();
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        // === Export Excel ===
+        function exportExcel() {
+            const month = document.getElementById('filterMonth').value;
+            const year = document.getElementById('filterYear').value;
+            const officer = document.getElementById('filterOfficer').value;
+
+            let url = API + '/api/reports/export/excel?year=' + year;
+            if (month) url += '&month=' + month;
+            if (officer) url += '&officer=' + encodeURIComponent(officer);
+
+            // Download via fetch with auth header
+            fetch(url, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            })
+            .then(res => {
+                if (!res.ok) throw new Error('Export failed');
+                return res.blob();
+            })
+            .then(blob => {
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                const monthNames = ['', 'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+                a.download = 'report_' + year + (month ? '_' + monthNames[parseInt(month)] : '') + '.xlsx';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(a.href);
+            })
+            .catch(e => {
+                alert('ไม่สามารถ Export ได้ กรุณาลองใหม่');
+                console.error(e);
+            });
+        }
+
+        // === Custom Questions ===
+        // Show/hide options input based on type
+        document.getElementById('newQType').addEventListener('change', function() {
+            const show = this.value === 'radio' || this.value === 'checkbox';
+            document.getElementById('optionsRow').style.display = show ? 'flex' : 'none';
+        });
+
+        async function loadQuestions() {
+            try {
+                const res = await fetch(API + '/api/questions/all', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (!res.ok) return;
+                const questions = await res.json();
+                renderQuestions(questions);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function renderQuestions(questions) {
+            const tbody = document.getElementById('questionsTable');
+            if (questions.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#888;padding:20px;">ยังไม่มีคำถามเพิ่มเติม</td></tr>';
+                return;
+            }
+            const typeLabels = { text: 'ข้อความ', textarea: 'ข้อความยาว', radio: 'ตัวเลือกเดียว', checkbox: 'หลายตัวเลือก', number: 'ตัวเลข', date: 'วันที่' };
+            tbody.innerHTML = questions.map(q => {
+                let opts = '';
+                if (q.options) {
+                    try { opts = JSON.parse(q.options).join(', '); } catch(e) { opts = q.options; }
+                }
+                return `<tr style="${!q.isActive ? 'opacity:0.5;' : ''}">
+                    <td>${q.sortOrder}</td>
+                    <td>${q.label}</td>
+                    <td>${typeLabels[q.type] || q.type}</td>
+                    <td>${opts || '-'}</td>
+                    <td>${q.isRequired ? '✓' : '-'}</td>
+                    <td>${q.isActive ? '<span style="color:#4caf50;">เปิดใช้</span>' : '<span style="color:#999;">ปิด</span>'}</td>
+                    <td>
+                        ${q.isActive
+                            ? '<button class="btn-delete" onclick="deleteQuestion(' + q.id + ')">ลบ</button>'
+                            : '<button class="btn-add" style="padding:5px 12px;font-size:0.8rem;" onclick="restoreQuestion(' + q.id + ',\'' + q.label.replace(/'/g, "\\'") + '\',\'' + q.type + '\')">เปิดใช้</button>'
+                        }
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        async function addQuestion() {
+            const label = document.getElementById('newQLabel').value.trim();
+            const type = document.getElementById('newQType').value;
+            const isRequired = document.getElementById('newQRequired').checked;
+            const optionsStr = document.getElementById('newQOptions').value.trim();
+            const msgEl = document.getElementById('questionMsg');
+
+            if (!label) {
+                msgEl.style.color = '#e74c3c';
+                msgEl.textContent = '✗ กรุณาระบุคำถาม';
+                return;
+            }
+
+            let options = null;
+            if ((type === 'radio' || type === 'checkbox') && optionsStr) {
+                options = optionsStr.split(',').map(s => s.trim()).filter(s => s);
+            }
+
+            try {
+                const res = await fetch(API + '/api/questions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({ label, type, options, isRequired })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    msgEl.style.color = '#4caf50';
+                    msgEl.textContent = '✓ ' + data.message;
+                    document.getElementById('newQLabel').value = '';
+                    document.getElementById('newQOptions').value = '';
+                    document.getElementById('newQRequired').checked = false;
+                    loadQuestions();
+                } else {
+                    msgEl.style.color = '#e74c3c';
+                    msgEl.textContent = '✗ ' + data.error;
+                }
+            } catch (e) {
+                msgEl.style.color = '#e74c3c';
+                msgEl.textContent = '✗ ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้';
+            }
+        }
+
+        async function deleteQuestion(id) {
+            if (!confirm('ต้องการลบคำถามนี้หรือไม่?')) return;
+            try {
+                await fetch(API + '/api/questions/' + id, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                loadQuestions();
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function restoreQuestion(id, label, type) {
+            try {
+                await fetch(API + '/api/questions/' + id, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({ label, type, isActive: true, isRequired: false, sortOrder: 0 })
+                });
+                loadQuestions();
+            } catch (e) {
+                console.error(e);
+            }
+        }
+    </script>
+</body>
+</html>

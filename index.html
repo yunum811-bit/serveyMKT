@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แบบฟอร์มบันทึกการปฏิบัติงานนอกสถานที่ - MARKETING SC</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Login Section -->
+    <div class="login-section" id="loginSection">
+        <div class="login-card">
+            <span class="login-badge">MARKETING SC</span>
+            <h2>เข้าสู่ระบบ</h2>
+            <p>กรุณาเข้าสู่ระบบเพื่อบันทึกการปฏิบัติงาน</p>
+            <form id="loginForm">
+                <input type="text" id="loginUser" class="login-input" placeholder="ชื่อผู้ใช้" autocomplete="username">
+                <input type="password" id="loginPass" class="login-input" placeholder="รหัสผ่าน" autocomplete="current-password">
+                <button type="submit" class="login-btn">เข้าสู่ระบบ</button>
+            </form>
+            <p class="login-err" id="loginErr"></p>
+            <div style="margin-top:16px;display:flex;gap:8px;justify-content:center;">
+                <a href="/dashboard.html" class="admin-shortcut">📈 Dashboard</a>
+                <a href="/admin.html" class="admin-shortcut">📊 Admin</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container" id="formContainer" style="display:none;">
+        <!-- User bar -->
+        <div class="user-bar" id="userBar">
+            <span id="loggedInUser"></span>
+            <div class="user-bar-actions">
+                <a href="/dashboard.html" class="dashboard-link">📈 Dashboard</a>
+                <a href="/admin.html" class="admin-link" id="adminLink" style="display:none;">📊 Admin</a>
+                <button onclick="doLogout()">ออกจากระบบ</button>
+            </div>
+        </div>
+
+        <!-- Header -->
+        <div class="header">
+            <span class="badge">MARKETING SC</span>
+            <h1>แบบฟอร์มบันทึกการปฏิบัติงานนอกสถานที่</h1>
+            <p>สำหรับเจ้าหน้าที่การตลาด/ฝ่ายขายใช้บันทึกรายละเอียดการปฏิบัติงานนอกสถานที่
+               การเข้าพบลูกค้า และสรุปผลการดำเนินงาน โดยให้บันทึกหลังจากที่ปฏิบัติงานแล้วเสร็จ</p>
+            <p class="required-note">* ระบุว่าเป็นคำถามที่จำเป็น</p>
+        </div>
+
+        <form id="surveyForm" novalidate>
+            <!-- ชื่อ-นามสกุล -->
+            <div class="section">
+                <label class="section-title">ชื่อ-นามสกุล ผู้ปฏิบัติงาน <span class="req">*</span></label>
+                <div class="radio-group">
+                    <label class="radio-item">
+                        <input type="radio" name="officer" value="นางสาว มนัสสนันท์ ตลับเพชร" required>
+                        <span class="radio-custom"></span>
+                        <span>นางสาว มนัสสนันท์ ตลับเพชร</span>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="officer" value="นาย ณัฐวุฒิ ฉิมไทย">
+                        <span class="radio-custom"></span>
+                        <span>นาย ณัฐวุฒิ ฉิมไทย</span>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="officer" value="นาย พิทักษ์พงษ์ งามจตุรภัทร์">
+                        <span class="radio-custom"></span>
+                        <span>นาย พิทักษ์พงษ์ งามจตุรภัทร์</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- วันที่ออกปฏิบัติงาน -->
+            <div class="section">
+                <label class="section-title">วันที่ออกปฏิบัติงาน <span class="req">*</span></label>
+                <input type="date" name="workDate" class="input-field" required>
+            </div>
+
+            <!-- ช่วงเวลาปฏิบัติงาน -->
+            <div class="section">
+                <label class="section-title">ช่วงเวลาปฏิบัติงาน (กรุณาเลือกหนึ่งข้อ) <span class="req">*</span></label>
+                <div class="radio-group">
+                    <label class="radio-item">
+                        <input type="radio" name="timeSlot" value="เต็มวัน (Full Day)" required>
+                        <span class="radio-custom"></span>
+                        <span>เต็มวัน (Full Day)</span>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="timeSlot" value="ครึ่งวันเช้า (AM)">
+                        <span class="radio-custom"></span>
+                        <span>ครึ่งวันเช้า (AM)</span>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="timeSlot" value="ครึ่งวันบ่าย (PM)">
+                        <span class="radio-custom"></span>
+                        <span>ครึ่งวันบ่าย (PM)</span>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="timeSlot" value="ระบุเวลาเฉพาะ" id="customTimeRadio">
+                        <span class="radio-custom"></span>
+                        <span>ระบุเวลาเฉพาะ (โปรดระบุในคำถามถัดไป)</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- เวลาเฉพาะ -->
+            <div class="section conditional" id="customTimeSection" style="display:none;">
+                <label class="section-title">หากเลือก 'ระบุเวลาเฉพาะ' กรุณาระบุช่วงเวลา</label>
+                <div class="time-row">
+                    <div class="time-field">
+                        <label>เวลาเริ่มต้น:</label>
+                        <select name="startTimeHour" class="input-field time-select">
+                            <option value="">-- ชั่วโมง --</option>
+                        </select>
+                        <select name="startTimeMin" class="input-field time-select">
+                            <option value="">-- นาที --</option>
+                        </select>
+                    </div>
+                    <div class="time-field">
+                        <label>เวลาสิ้นสุด:</label>
+                        <select name="endTimeHour" class="input-field time-select">
+                            <option value="">-- ชั่วโมง --</option>
+                        </select>
+                        <select name="endTimeMin" class="input-field time-select">
+                            <option value="">-- นาที --</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- วัตถุประสงค์ -->
+            <div class="section">
+                <label class="section-title">วัตถุประสงค์ / ลักษณะงาน (สามารถเลือกได้มากกว่า 1 ข้อ) <span class="req">*</span></label>
+                <div class="checkbox-group">
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="objective" value="พบลูกค้าใหม่">
+                        <span class="checkbox-custom"></span>
+                        <span>1. พบลูกค้าใหม่ (New Prospect) - เพื่อนำเสนอขาย / แนะนำบริการ / เปิดความต้องการ</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="objective" value="พบลูกค้าเก่า">
+                        <span class="checkbox-custom"></span>
+                        <span>2. พบลูกค้าเก่า (Existing Customer / Retention) - บริการหลังการขาย / เสนอขายเพิ่ม / กระชับความสัมพันธ์</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="objective" value="Visit โครงการ">
+                        <span class="checkbox-custom"></span>
+                        <span>3. Visit โครงการ (Site Visit / Survey) - ดูหน้างาน / สำรวจความคืบหน้า / สำรวจข้อมูลตลาด</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="objective" value="ลงนามสัญญา">
+                        <span class="checkbox-custom"></span>
+                        <span>4. ลงนามสัญญา (Contract Signing) - เพื่อเซ็นสัญญาซื้อขาย / ปิดดีลอย่างเป็นทางการ</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="objective" value="ตรวจสภาพสินค้าก่อนส่งมอบ">
+                        <span class="checkbox-custom"></span>
+                        <span>5. ตรวจสภาพสินค้าก่อนส่งมอบ</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="objective" value="โอนสิทธิการรับเงิน">
+                        <span class="checkbox-custom"></span>
+                        <span>6. โอนสิทธิการรับเงิน</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="objective" value="Visit ลูกหนี้การค้า/วางบิล">
+                        <span class="checkbox-custom"></span>
+                        <span>7. Visit ลูกหนี้การค้า / วางบิลลูกหนี้</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="objective" value="เปิดบัญชีควบคุม BBL/ลงนามเช็ค">
+                        <span class="checkbox-custom"></span>
+                        <span>8. เปิดบัญชีควบคุม BBL / ลงนามเช็คบัญชีควบคุม</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="objective" value="อื่นๆ" id="objectiveOther">
+                        <span class="checkbox-custom"></span>
+                        <span>อื่นๆ</span>
+                    </label>
+                </div>
+                <input type="text" name="objectiveOtherText" class="input-field conditional-input" id="objectiveOtherInput"
+                       placeholder="หากเลือก 'อื่นๆ' กรุณาระบุรายละเอียด" style="display:none;">
+            </div>
+
+            <!-- แหล่งที่มาของลูกค้า -->
+            <div class="section">
+                <label class="section-title">แหล่งที่มาของลูกค้า</label>
+                <div class="radio-group">
+                    <label class="radio-item">
+                        <input type="radio" name="leadSource" value="เว็บไซต์บริษัท">
+                        <span class="radio-custom"></span>
+                        <span>เว็บไซต์บริษัท</span>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="leadSource" value="Line OA">
+                        <span class="radio-custom"></span>
+                        <span>Line OA</span>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="leadSource" value="Tele Sales">
+                        <span class="radio-custom"></span>
+                        <span>Tele Sales</span>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="leadSource" value="ลูกค้าแนะนำ">
+                        <span class="radio-custom"></span>
+                        <span>ลูกค้าแนะนำ</span>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="leadSource" value="ลูกค้าเก่า">
+                        <span class="radio-custom"></span>
+                        <span>ลูกค้าเก่า</span>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="leadSource" value="Lead Call Marketing">
+                        <span class="radio-custom"></span>
+                        <span>Lead Call Marketing</span>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="leadSource" value="อื่นๆ" id="leadSourceOther">
+                        <span class="radio-custom"></span>
+                        <span>อื่นๆ</span>
+                    </label>
+                </div>
+                <input type="text" name="leadSourceOtherText" class="input-field conditional-input" id="leadSourceOtherInput"
+                       placeholder="กรุณาระบุแหล่งที่มา" style="display:none;">
+            </div>
+
+            <!-- ผลิตภัณฑ์ทางการเงิน -->
+            <div class="section">
+                <label class="section-title">ผลิตภัณฑ์ทางการเงินที่ลูกค้าสนใจ (สามารถเลือกได้มากกว่า 1 ข้อ)</label>
+                <div class="checkbox-group">
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="product" value="Factoring">
+                        <span class="checkbox-custom"></span>
+                        <span>Factoring</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="product" value="Loan For Project">
+                        <span class="checkbox-custom"></span>
+                        <span>Loan For Project</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="product" value="Trade Finance">
+                        <span class="checkbox-custom"></span>
+                        <span>Trade Finance</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="product" value="Leasing & Hire Purchase">
+                        <span class="checkbox-custom"></span>
+                        <span>Leasing & Hire Purchase</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="product" value="จ้างที่ปรึกษา">
+                        <span class="checkbox-custom"></span>
+                        <span>จ้างที่ปรึกษา</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="product" value="อื่นๆ" id="productOther">
+                        <span class="checkbox-custom"></span>
+                        <span>อื่นๆ</span>
+                    </label>
+                </div>
+                <input type="text" name="productOtherText" class="input-field conditional-input" id="productOtherInput"
+                       placeholder="กรุณาระบุผลิตภัณฑ์" style="display:none;">
+            </div>
+
+            <!-- ชื่อบริษัทลูกค้า -->
+            <div class="section">
+                <label class="section-title">ชื่อบริษัทลูกค้า / ชื่อลูกหนี้การค้า / ชื่อสถานที่เข้าพบ <span class="req">*</span></label>
+                <input type="text" name="companyName" class="input-field" placeholder="กรุณาระบุชื่อบริษัท/สถานที่" required>
+            </div>
+
+            <!-- ชื่อบุคคลที่เข้าพบ -->
+            <div class="section">
+                <label class="section-title">ชื่อบุคคลที่เข้าพบ (Contact Person) และตำแหน่ง <span class="req">*</span></label>
+                <input type="text" name="contactPerson" class="input-field" placeholder="ชื่อ-นามสกุล และตำแหน่ง" required>
+            </div>
+
+            <!-- สรุปสาระสำคัญ -->
+            <div class="section">
+                <label class="section-title">สรุปสาระสำคัญ / ผลการหารือ <span class="req">*</span></label>
+                <p class="hint">กรุณาระบุรายละเอียดการพูดคุย ผลลัพธ์ที่ได้ หรือข้อตกลงเบื้องต้นร่วมกับลูกค้า</p>
+                <textarea name="summary" class="input-field textarea" rows="5" placeholder="ระบุรายละเอียด..." required></textarea>
+            </div>
+
+            <!-- Next Step -->
+            <div class="section">
+                <label class="section-title">สิ่งที่ต้องดำเนินการต่อไป (Next Step) - เลือกได้มากกว่า 1 ข้อ</label>
+                <div class="checkbox-group">
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="nextStep" value="ส่งเงื่อนไขข้อเสนอ" id="nextStepProposal">
+                        <span class="checkbox-custom"></span>
+                        <span>ส่งเงื่อนไขข้อเสนอ</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="nextStep" value="นัดหมายเข้าพบครั้งถัดไป" id="nextStepMeeting">
+                        <span class="checkbox-custom"></span>
+                        <span>นัดหมายเข้าพบครั้งถัดไป</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="nextStep" value="ติดตามเรื่อง">
+                        <span class="checkbox-custom"></span>
+                        <span>ติดตามเรื่อง</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="nextStep" value="เตรียมเอกสาร">
+                        <span class="checkbox-custom"></span>
+                        <span>เตรียมเอกสาร</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="nextStep" value="อื่นๆ" id="nextStepOther">
+                        <span class="checkbox-custom"></span>
+                        <span>อื่นๆ</span>
+                    </label>
+                </div>
+                <input type="text" name="nextStepOtherText" class="input-field conditional-input" id="nextStepOtherInput"
+                       placeholder="กรุณาระบุรายละเอียด" style="display:none;">
+            </div>
+
+            <!-- วันกำหนดส่งเงื่อนไข -->
+            <div class="section conditional" id="proposalDateSection" style="display:none;">
+                <label class="section-title">หากต้องส่งเงื่อนไขข้อเสนอใหม่ให้ลูกค้า กรุณาระบุวันกำหนดส่ง</label>
+                <input type="date" name="proposalDate" class="input-field">
+            </div>
+
+            <!-- วันนัดหมายครั้งถัดไป -->
+            <div class="section conditional" id="meetingDateSection" style="display:none;">
+                <label class="section-title">หากต้องนัดหมายเข้าพบครั้งถัดไป กรุณาระบุวันที่นัดหมาย</label>
+                <input type="date" name="meetingDate" class="input-field">
+            </div>
+
+            <!-- ระดับความน่าจะเป็น -->
+            <div class="section">
+                <label class="section-title">ระดับความน่าจะเป็นในการปิดดีล (สำหรับงานขาย/หาลูกค้า)</label>
+                <div class="radio-group">
+                    <label class="radio-item">
+                        <input type="radio" name="dealProbability" value="สูง (Hot Prospect)">
+                        <span class="radio-custom"></span>
+                        <span>สูง (Hot Prospect)</span>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="dealProbability" value="ปานกลาง (Warm Prospect)">
+                        <span class="radio-custom"></span>
+                        <span>ปานกลาง (Warm Prospect)</span>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="dealProbability" value="ติดตามระยะยาว (Cold Prospect)">
+                        <span class="radio-custom"></span>
+                        <span>ติดตามระยะยาว (Cold Prospect)</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- ภาพถ่าย 1 -->
+            <div class="section">
+                <label class="section-title">ภาพถ่ายประกอบการปฏิบัติงาน 1 <span class="req">*</span></label>
+                <p class="hint">เช่น ภาพถ่ายขณะปฏิบัติงาน/ถ่ายร่วมกับลูกค้า (ขนาดสูงสุด 10 MB)</p>
+                <div class="file-upload" id="fileUpload1">
+                    <input type="file" name="photo1" id="photo1" accept="image/*" required>
+                    <div class="file-upload-label">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#6c63ff" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="17 8 12 3 7 8"/>
+                            <line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                        <p>คลิกเพื่ออัปโหลดไฟล์ หรือลากไฟล์มาวาง</p>
+                        <span class="file-name" id="fileName1"></span>
+                    </div>
+                </div>
+                <input type="text" name="photoDesc1" class="input-field" placeholder="คำอธิบายภาพ 1" style="margin-top:10px;">
+            </div>
+
+            <!-- ภาพถ่าย 2 -->
+            <div class="section">
+                <label class="section-title">ภาพถ่ายประกอบการปฏิบัติงาน 2 <span class="req">*</span></label>
+                <p class="hint">เช่น ภาพถ่ายหน้างาน/บรรยากาศโครงการ (ขนาดสูงสุด 10 MB)</p>
+                <div class="file-upload" id="fileUpload2">
+                    <input type="file" name="photo2" id="photo2" accept="image/*" required>
+                    <div class="file-upload-label">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#6c63ff" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="17 8 12 3 7 8"/>
+                            <line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                        <p>คลิกเพื่ออัปโหลดไฟล์ หรือลากไฟล์มาวาง</p>
+                        <span class="file-name" id="fileName2"></span>
+                    </div>
+                </div>
+                <input type="text" name="photoDesc2" class="input-field" placeholder="คำอธิบายภาพ 2" style="margin-top:10px;">
+            </div>
+
+            <!-- พื้นที่/จังหวัด -->
+            <div class="section">
+                <label class="section-title">พื้นที่/จังหวัดที่ออกปฏิบัติงาน <span class="req">*</span></label>
+                <div class="radio-group">
+                    <label class="radio-item">
+                        <input type="radio" name="province" value="กรุงเทพมหานคร" required>
+                        <span class="radio-custom"></span>
+                        <span>กรุงเทพมหานคร</span>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="province" value="นนทบุรี">
+                        <span class="radio-custom"></span>
+                        <span>นนทบุรี</span>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="province" value="ปทุมธานี">
+                        <span class="radio-custom"></span>
+                        <span>ปทุมธานี</span>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="province" value="สมุทรปราการ">
+                        <span class="radio-custom"></span>
+                        <span>สมุทรปราการ</span>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="province" value="ชลบุรี">
+                        <span class="radio-custom"></span>
+                        <span>ชลบุรี</span>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="province" value="อื่นๆ" id="provinceOther">
+                        <span class="radio-custom"></span>
+                        <span>อื่นๆ</span>
+                    </label>
+                </div>
+                <input type="text" name="provinceOtherText" class="input-field conditional-input" id="provinceOtherInput"
+                       placeholder="กรุณาระบุจังหวัด" style="display:none;">
+            </div>
+
+            <!-- คาดการณ์มูลค่าดีล -->
+            <div class="section">
+                <label class="section-title">คุณคาดการณ์มูลค่าดีล/โอกาสทางธุรกิจ (บาท) ที่เกิดขึ้นจากการปฏิบัติงานครั้งนี้ได้หรือไม่?</label>
+                <div class="radio-group">
+                    <label class="radio-item">
+                        <input type="radio" name="dealEstimate" value="คาดการณ์ได้" id="canEstimate">
+                        <span class="radio-custom"></span>
+                        <span>คาดการณ์ได้</span>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="dealEstimate" value="ยังไม่สามารถคาดการณ์ได้">
+                        <span class="radio-custom"></span>
+                        <span>ยังไม่สามารถคาดการณ์ได้</span>
+                    </label>
+                </div>
+                <input type="text" name="dealValue" class="input-field conditional-input" id="dealValueInput"
+                       placeholder="ระบุมูลค่าโดยประมาณ (บาท)" style="display:none;">
+            </div>
+
+            <!-- ความสำเร็จ -->
+            <div class="section">
+                <label class="section-title">ความสำเร็จของการปฏิบัติงานครั้งนี้เป็นอย่างไร (โดยรวม)?</label>
+                <div class="rating-group">
+                    <label class="rating-item" title="1 - น้อยที่สุด">
+                        <input type="radio" name="successRating" value="1">
+                        <span class="rating-circle">1</span>
+                    </label>
+                    <label class="rating-item" title="2">
+                        <input type="radio" name="successRating" value="2">
+                        <span class="rating-circle">2</span>
+                    </label>
+                    <label class="rating-item" title="3">
+                        <input type="radio" name="successRating" value="3">
+                        <span class="rating-circle">3</span>
+                    </label>
+                    <label class="rating-item" title="4">
+                        <input type="radio" name="successRating" value="4">
+                        <span class="rating-circle">4</span>
+                    </label>
+                    <label class="rating-item" title="5 - มากที่สุด">
+                        <input type="radio" name="successRating" value="5">
+                        <span class="rating-circle">5</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- คู่แข่ง -->
+            <div class="section">
+                <label class="section-title">ระบุชื่อคู่แข่งสำคัญที่พบในตลาด (ถ้ามี)</label>
+                <p class="hint">หรือมีส่วนเกี่ยวข้องในการตัดสินใจของลูกค้า</p>
+                <div class="checkbox-group">
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="competitor" value="KBANK">
+                        <span class="checkbox-custom"></span>
+                        <span>KBANK</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="competitor" value="TTB">
+                        <span class="checkbox-custom"></span>
+                        <span>TTB</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="competitor" value="KTB">
+                        <span class="checkbox-custom"></span>
+                        <span>KTB</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="competitor" value="SME D BANK">
+                        <span class="checkbox-custom"></span>
+                        <span>SME D BANK</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="competitor" value="AIRA">
+                        <span class="checkbox-custom"></span>
+                        <span>AIRA</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="competitor" value="LITI">
+                        <span class="checkbox-custom"></span>
+                        <span>LITI</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="competitor" value="FS CAPITAL">
+                        <span class="checkbox-custom"></span>
+                        <span>FS CAPITAL</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="competitor" value="อื่นๆ" id="competitorOther">
+                        <span class="checkbox-custom"></span>
+                        <span>อื่นๆ</span>
+                    </label>
+                </div>
+                <input type="text" name="competitorOtherText" class="input-field conditional-input" id="competitorOtherInput"
+                       placeholder="กรุณาระบุชื่อคู่แข่ง" style="display:none;">
+            </div>
+
+            <!-- ผู้ตรวจสอบ -->
+            <div class="section">
+                <label class="section-title">ผู้ตรวจสอบ / ผู้บังคับบัญชา <span class="req">*</span></label>
+                <div class="radio-group">
+                    <label class="radio-item">
+                        <input type="radio" name="supervisor" value="คุณธีรวัฒน์ ขำเมือง (พี่เอ)" required>
+                        <span class="radio-custom"></span>
+                        <span>คุณธีรวัฒน์ ขำเมือง (พี่เอ)</span>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="supervisor" value="คุณมนัสสนันท์ ตลับเพชร (แนน)">
+                        <span class="radio-custom"></span>
+                        <span>คุณมนัสสนันท์ ตลับเพชร (แนน)</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- คำถามเพิ่มเติม (Dynamic) -->
+            <div id="customQuestionsContainer"></div>
+
+            <!-- Submit Button -->
+            <div class="section submit-section">
+                <button type="submit" class="submit-btn">ส่งแบบฟอร์ม</button>
+                <button type="reset" class="reset-btn">ล้างข้อมูล</button>
+            </div>
+        </form>
+
+        <!-- Success Modal -->
+        <div class="modal-overlay" id="successModal">
+            <div class="modal">
+                <div class="modal-icon">✓</div>
+                <h2>บันทึกข้อมูลสำเร็จ!</h2>
+                <p>ระบบได้รับข้อมูลการปฏิบัติงานของคุณเรียบร้อยแล้ว</p>
+                <button class="modal-btn" onclick="closeModal()">ตกลง</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Bind login form
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            doLogin();
+        });
+
+        // Login logic for form page
+        const savedToken = localStorage.getItem('token');
+        if (savedToken) {
+            fetch('/api/auth/me', { headers: { 'Authorization': 'Bearer ' + savedToken } })
+                .then(r => r.ok ? r.json() : Promise.reject())
+                .then(user => {
+                    document.getElementById('loginSection').style.display = 'none';
+                    document.getElementById('formContainer').style.display = 'block';
+                    document.getElementById('loggedInUser').textContent = user.fullName;
+                    if (user.role === 'admin') {
+                        document.getElementById('adminLink').style.display = 'inline-block';
+                    }
+                })
+                .catch(() => {
+                    localStorage.removeItem('token');
+                });
+        }
+
+        function doLogin() {
+            const username = document.getElementById('loginUser').value.trim();
+            const password = document.getElementById('loginPass').value;
+            const errEl = document.getElementById('loginErr');
+            errEl.textContent = '';
+
+            if (!username || !password) {
+                errEl.textContent = 'กรุณากรอกชื่อผู้ใช้และรหัสผ่าน';
+                return;
+            }
+
+            fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.token) {
+                    localStorage.setItem('token', data.token);
+                    document.getElementById('loginSection').style.display = 'none';
+                    document.getElementById('formContainer').style.display = 'block';
+                    document.getElementById('loggedInUser').textContent = data.user.fullName;
+                    if (data.user.role === 'admin') {
+                        document.getElementById('adminLink').style.display = 'inline-block';
+                    }
+                } else {
+                    errEl.textContent = data.error || 'เข้าสู่ระบบไม่สำเร็จ';
+                }
+            })
+            .catch(() => { errEl.textContent = 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้'; });
+        }
+
+        function doLogout() {
+            localStorage.removeItem('token');
+            location.reload();
+        }
+    </script>
+    <script src="script.js"></script>
+</body>
+</html>
