@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: marketing-sc
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server-pg.js
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
