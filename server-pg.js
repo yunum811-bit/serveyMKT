@@ -18,17 +18,38 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname)));
 
-// === File Upload Config (Local disk) ===
-if (!fs.existsSync('./uploads')) fs.mkdirSync('./uploads', { recursive: true });
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, './uploads'),
-    filename: (req, file, cb) => {
-        const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueName + path.extname(file.originalname));
-    }
-});
-const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
+// === File Upload Config ===
+let upload;
+
+if (process.env.CLOUDINARY_CLOUD_NAME) {
+    // Cloudinary upload (production)
+    const cloudinary = require('cloudinary').v2;
+    const { CloudinaryStorage } = require('multer-storage-cloudinary');
+    cloudinary.config({
+        cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+        api_key: process.env.CLOUDINARY_API_KEY,
+        api_secret: process.env.CLOUDINARY_API_SECRET
+    });
+    const storage = new CloudinaryStorage({
+        cloudinary,
+        params: { folder: 'marketing-sc', allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp'] }
+    });
+    upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
+    console.log('Upload: Cloudinary');
+} else {
+    // Local upload (development)
+    if (!fs.existsSync('./uploads')) fs.mkdirSync('./uploads', { recursive: true });
+    app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+    const storage = multer.diskStorage({
+        destination: (req, file, cb) => cb(null, './uploads'),
+        filename: (req, file, cb) => {
+            const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1E9);
+            cb(null, uniqueName + path.extname(file.originalname));
+        }
+    });
+    upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
+    console.log('Upload: Local disk');
+}
 
 // === Auth Middleware ===
 function authMiddleware(req, res, next) {
