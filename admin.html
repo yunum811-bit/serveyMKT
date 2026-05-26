@@ -434,6 +434,11 @@
                         </select>
                     </div>
                     <div id="fieldEditor" style="display:none;margin-top:16px;">
+                        <div style="margin-bottom:12px;">
+                            <label style="display:block;font-size:0.85rem;color:#555;margin-bottom:4px;">ชื่อหัวข้อ</label>
+                            <input type="text" id="fieldLabelInput" style="width:100%;padding:10px 14px;border:2px solid #e0e0e0;border-radius:8px;font-family:inherit;outline:none;">
+                        </div>
+                        <label style="display:block;font-size:0.85rem;color:#555;margin-bottom:4px;">ตัวเลือก</label>
                         <div id="fieldOptionsList" style="margin-bottom:12px;"></div>
                         <div class="form-row">
                             <input type="text" id="newOptionText" placeholder="เพิ่มตัวเลือกใหม่" style="flex:1;">
@@ -1170,8 +1175,10 @@
 
             if (formOptionsCache[key]) {
                 currentFieldOptions = [...formOptionsCache[key].options];
+                document.getElementById('fieldLabelInput').value = formOptionsCache[key].label;
             } else {
                 currentFieldOptions = [...defaultOptions[key].options];
+                document.getElementById('fieldLabelInput').value = defaultOptions[key].label;
             }
             renderFieldOptions();
         }
@@ -1197,7 +1204,8 @@
 
         async function saveFieldOptions() {
             const msgEl = document.getElementById('fieldMsg');
-            const label = defaultOptions[currentFieldKey].label;
+            const label = document.getElementById('fieldLabelInput').value.trim();
+            if (!label) { msgEl.style.color = '#e74c3c'; msgEl.textContent = '✗ กรุณาระบุชื่อหัวข้อ'; return; }
             try {
                 const res = await fetch(API + '/api/form-options/' + currentFieldKey, {
                     method: 'PUT',

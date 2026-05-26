@@ -363,27 +363,36 @@ async function loadFormOptions() {
         if (!data || Object.keys(data).length === 0) return;
 
         // Update officers
-        if (data.officers) updateRadioGroup('officer', data.officers.options);
+        if (data.officers) updateRadioGroup('officer', data.officers.options, false, data.officers.label);
         // Update objectives
-        if (data.objectives) updateCheckboxGroup('objective', data.objectives.options);
+        if (data.objectives) updateCheckboxGroup('objective', data.objectives.options, true, data.objectives.label);
         // Update lead sources
-        if (data.leadSources) updateRadioGroup('leadSource', data.leadSources.options, true);
+        if (data.leadSources) updateRadioGroup('leadSource', data.leadSources.options, true, data.leadSources.label);
         // Update products
-        if (data.products) updateCheckboxGroup('product', data.products.options, true);
+        if (data.products) updateCheckboxGroup('product', data.products.options, true, data.products.label);
         // Update provinces
-        if (data.provinces) updateRadioGroup('province', data.provinces.options, true);
+        if (data.provinces) updateRadioGroup('province', data.provinces.options, true, data.provinces.label);
         // Update competitors
-        if (data.competitors) updateCheckboxGroup('competitor', data.competitors.options, true);
+        if (data.competitors) updateCheckboxGroup('competitor', data.competitors.options, true, data.competitors.label);
         // Update supervisors
-        if (data.supervisors) updateRadioGroup('supervisor', data.supervisors.options);
+        if (data.supervisors) updateRadioGroup('supervisor', data.supervisors.options, false, data.supervisors.label);
         // Update next steps
-        if (data.nextSteps) updateCheckboxGroup('nextStep', data.nextSteps.options, true);
+        if (data.nextSteps) updateCheckboxGroup('nextStep', data.nextSteps.options, true, data.nextSteps.label);
     } catch(e) { /* use defaults */ }
 }
 
-function updateRadioGroup(name, options, hasOther) {
+function updateRadioGroup(name, options, hasOther, label) {
     const container = document.querySelector(`input[name="${name}"]`)?.closest('.radio-group');
     if (!container) return;
+    // Update label/title
+    if (label) {
+        const titleEl = container.parentElement.querySelector('.section-title');
+        if (titleEl) {
+            const req = titleEl.querySelector('.req');
+            titleEl.textContent = label + ' ';
+            if (req) titleEl.appendChild(req);
+        }
+    }
     const otherInput = container.parentElement.querySelector('.conditional-input');
     container.innerHTML = options.map(opt =>
         `<label class="radio-item">
@@ -406,9 +415,18 @@ function updateRadioGroup(name, options, hasOther) {
     }
 }
 
-function updateCheckboxGroup(name, options, hasOther) {
+function updateCheckboxGroup(name, options, hasOther, label) {
     const container = document.querySelector(`input[name="${name}"]`)?.closest('.checkbox-group');
     if (!container) return;
+    // Update label/title
+    if (label) {
+        const titleEl = container.parentElement.querySelector('.section-title');
+        if (titleEl) {
+            const req = titleEl.querySelector('.req');
+            titleEl.textContent = label + ' ';
+            if (req) titleEl.appendChild(req);
+        }
+    }
     const otherInput = container.parentElement.querySelector('.conditional-input');
     container.innerHTML = options.map(opt =>
         `<label class="checkbox-item">
