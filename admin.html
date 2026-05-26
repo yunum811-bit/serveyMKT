@@ -805,6 +805,7 @@
                 <td>${u.createdAt}</td>
                 <td>
                     <button class="btn-edit" onclick="editUser(${u.id}, '${u.username.replace(/'/g, "\\'")}', '${u.fullName.replace(/'/g, "\\'")}', '${u.role}')">✏️ แก้ไข</button>
+                    ${u.role === 'user' ? '<button style="background:#9c27b0;color:#fff;border:none;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:0.8rem;margin-right:4px;" onclick="editFormConfig(' + u.id + ',\'' + u.fullName.replace(/'/g, "\\'") + '\')">⚙️ ฟอร์ม</button>' : ''}
                     <button class="btn-reset-pw" onclick="resetPassword(${u.id}, '${u.username}')">🔑 Reset</button>
                     ${u.role !== 'admin' ? '<button class="btn-delete" onclick="deleteUser(' + u.id + ')">ลบ</button>' : ''}
                 </td>
@@ -1292,6 +1293,88 @@
                 msgEl.textContent = '✗ ไม่สามารถบันทึกได้';
             }
             setTimeout(() => { msgEl.textContent = ''; }, 3000);
+        }
+
+        // === User Form Config ===
+        const allFormFields = [
+            { key: 'officer', label: 'ชื่อ-นามสกุล ผู้ปฏิบัติงาน' },
+            { key: 'workDate', label: 'วันที่ออกปฏิบัติงาน' },
+            { key: 'timeSlot', label: 'ช่วงเวลาปฏิบัติงาน' },
+            { key: 'objective', label: 'วัตถุประสงค์ / ลักษณะงาน' },
+            { key: 'leadSource', label: 'แหล่งที่มาของลูกค้า' },
+            { key: 'product', label: 'ผลิตภัณฑ์ทางการเงิน' },
+            { key: 'companyName', label: 'ชื่อบริษัทลูกค้า' },
+            { key: 'contactPerson', label: 'ชื่อบุคคลที่เข้าพบ' },
+            { key: 'summary', label: 'สรุปสาระสำคัญ' },
+            { key: 'nextStep', label: 'Next Step' },
+            { key: 'dealProbability', label: 'ระดับความน่าจะเป็นปิดดีล' },
+            { key: 'photo', label: 'ภาพถ่ายประกอบ' },
+            { key: 'province', label: 'พื้นที่/จังหวัด' },
+            { key: 'dealEstimate', label: 'คาดการณ์มูลค่าดีล' },
+            { key: 'successRating', label: 'ความสำเร็จ (คะแนน)' },
+            { key: 'competitor', label: 'คู่แข่ง' },
+            { key: 'supervisor', label: 'ผู้ตรวจสอบ' }
+        ];
+
+        async function editFormConfig(userId, fullName) {
+            // Load current config
+            let hiddenFields = [];
+            try {
+                const res = await fetch(API + '/api/user-form-config/' + userId, { headers: { 'Authorization': 'Bearer ' + token } });
+                const data = await res.json();
+                hiddenFields = data.hiddenFields || [];
+            } catch(e) {}
+
+            let modal = document.getElementById('formConfigModal');
+            if (modal) modal.remove();
+
+            modal = document.createElement('div');
+            modal.id = 'formConfigModal';
+            modal.innerHTML = `
+                <div style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;">
+                    <div style="background:#fff;border-radius:16px;padding:30px;max-width:500px;width:90%;max-height:85vh;overflow-y:auto;position:relative;">
+                        <button onclick="document.getElementById('formConfigModal').remove()" style="position:absolute;top:12px;right:16px;background:none;border:none;font-size:1.5rem;cursor:pointer;color:#888;">✕</button>
+                        <h3 style="margin-bottom:8px;color:#333;">⚙️ ตั้งค่าฟอร์ม</h3>
+                        <p style="font-size:0.85rem;color:#888;margin-bottom:16px;">สำหรับ: <strong>${fullName}</strong><br>เลือกหัวข้อที่ต้องการ <strong>ซ่อน</strong> (ไม่แสดงในฟอร์มของ user นี้)</p>
+                        <div id="formConfigFields">
+                            ${allFormFields.map(f => `
+                                <label style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f0f0f0;cursor:pointer;">
+                                    <input type="checkbox" value="${f.key}" ${hiddenFields.includes(f.key) ? 'checked' : ''} style="width:18px;height:18px;">
+                                    <span style="font-size:0.9rem;">${f.label}</span>
+                                </label>
+                            `).join('')}
+                        </div>
+                        <p id="formConfigMsg" style="font-size:0.85rem;margin-top:12px;"></p>
+                        <button onclick="saveFormConfig(${userId})" style="width:100%;margin-top:16px;background:#6c63ff;color:#fff;border:none;padding:12px;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;font-family:inherit;">💾 บันทึก</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        async function saveFormConfig(userId) {
+            const checkboxes = document.querySelectorAll('#formConfigFields input[type="checkbox"]:checked');
+            const hiddenFields = Array.from(checkboxes).map(cb => cb.value);
+            const msgEl = document.getElementById('formConfigMsg');
+            try {
+                const res = await fetch(API + '/api/user-form-config/' + userId, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({ hiddenFields })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    msgEl.style.color = '#4caf50';
+                    msgEl.textContent = '✓ ' + data.message;
+                    setTimeout(() => { document.getElementById('formConfigModal').remove(); }, 1000);
+                } else {
+                    msgEl.style.color = '#e74c3c';
+                    msgEl.textContent = '✗ ' + data.error;
+                }
+            } catch(e) {
+                msgEl.style.color = '#e74c3c';
+                msgEl.textContent = '✗ ไม่สามารถบันทึกได้';
+            }
         }
     </script>
 </body>

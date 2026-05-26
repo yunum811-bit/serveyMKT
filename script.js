@@ -356,6 +356,28 @@ loadCustomQuestions();
 // Load editable form options from API
 loadFormOptions();
 
+// Load user form config (hide fields per user)
+loadUserFormConfig();
+
+async function loadUserFormConfig() {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    try {
+        const res = await fetch('/api/user-form-config', { headers: { 'Authorization': 'Bearer ' + token } });
+        const data = await res.json();
+        if (data.hiddenFields && data.hiddenFields.length > 0) {
+            data.hiddenFields.forEach(fieldKey => {
+                // Find and hide sections containing this field
+                const inputs = document.querySelectorAll(`[name="${fieldKey}"]`);
+                inputs.forEach(input => {
+                    const section = input.closest('.section');
+                    if (section) section.style.display = 'none';
+                });
+            });
+        }
+    } catch(e) { /* use defaults */ }
+}
+
 async function loadFormOptions() {
     try {
         const res = await fetch('/api/form-options');

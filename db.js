@@ -97,6 +97,13 @@ async function initDB() {
                 field_label TEXT NOT NULL,
                 options TEXT NOT NULL
             );
+
+            CREATE TABLE IF NOT EXISTS user_form_config (
+                id SERIAL PRIMARY KEY,
+                "userId" INTEGER NOT NULL,
+                hidden_fields TEXT DEFAULT '[]',
+                UNIQUE("userId")
+            );
         `);
         console.log('Database tables initialized');
 

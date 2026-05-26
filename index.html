@@ -577,10 +577,15 @@
             fetch('/api/auth/me', { headers: { 'Authorization': 'Bearer ' + savedToken } })
                 .then(r => r.ok ? r.json() : Promise.reject())
                 .then(user => {
+                    // MD and admin don't need to fill forms - redirect
+                    if (user.role === 'md' || user.role === 'admin') {
+                        window.location.href = '/admin.html';
+                        return;
+                    }
                     document.getElementById('loginSection').style.display = 'none';
                     document.getElementById('formContainer').style.display = 'block';
                     document.getElementById('loggedInUser').textContent = user.fullName;
-                    if (user.role === 'admin') {
+                    if (user.role === 'admin' || user.role === 'md') {
                         document.getElementById('adminLink').style.display = 'inline-block';
                     }
                 })
@@ -609,10 +614,15 @@
             .then(data => {
                 if (data.token) {
                     localStorage.setItem('token', data.token);
+                    // MD and admin redirect to admin page
+                    if (data.user.role === 'md' || data.user.role === 'admin') {
+                        window.location.href = '/admin.html';
+                        return;
+                    }
                     document.getElementById('loginSection').style.display = 'none';
                     document.getElementById('formContainer').style.display = 'block';
                     document.getElementById('loggedInUser').textContent = data.user.fullName;
-                    if (data.user.role === 'admin') {
+                    if (data.user.role === 'mgr') {
                         document.getElementById('adminLink').style.display = 'inline-block';
                     }
                 } else {
