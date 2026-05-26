@@ -356,7 +356,7 @@ loadCustomQuestions();
 // Load editable form options from API
 loadFormOptions();
 
-// Load user form config (hide fields per user)
+// Load user form config (hide fields per user + custom options per user)
 loadUserFormConfig();
 
 async function loadUserFormConfig() {
@@ -365,15 +365,34 @@ async function loadUserFormConfig() {
     try {
         const res = await fetch('/api/user-form-config', { headers: { 'Authorization': 'Bearer ' + token } });
         const data = await res.json();
+
+        // Hide fields
         if (data.hiddenFields && data.hiddenFields.length > 0) {
             data.hiddenFields.forEach(fieldKey => {
-                // Find and hide sections containing this field
                 const inputs = document.querySelectorAll(`[name="${fieldKey}"]`);
                 inputs.forEach(input => {
                     const section = input.closest('.section');
                     if (section) section.style.display = 'none';
                 });
             });
+        }
+
+        // Apply per-user custom options (overrides global form-options)
+        if (data.customOptions && Object.keys(data.customOptions).length > 0) {
+            const fieldMap = { officers: 'officer', objectives: 'objective', leadSources: 'leadSource', products: 'product', provinces: 'province', competitors: 'competitor', supervisors: 'supervisor', nextSteps: 'nextStep' };
+            const hasOtherFields = ['leadSource', 'product', 'province', 'competitor', 'nextStep', 'objective'];
+            const radioFields = ['officer', 'leadSource', 'province', 'supervisor'];
+
+            for (const [key, options] of Object.entries(data.customOptions)) {
+                const name = fieldMap[key];
+                if (!name || !options.length) continue;
+                const hasOther = hasOtherFields.includes(name);
+                if (radioFields.includes(name)) {
+                    updateRadioGroup(name, options, hasOther);
+                } else {
+                    updateCheckboxGroup(name, options, hasOther);
+                }
+            }
         }
     } catch(e) { /* use defaults */ }
 }

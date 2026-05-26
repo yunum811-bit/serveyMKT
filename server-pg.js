@@ -432,26 +432,27 @@ app.put('/api/form-options/:key', authMiddleware, adminMiddleware, async (req, r
 app.get('/api/user-form-config/:userId', authMiddleware, async (req, res) => {
     try {
         const config = await queryOne('SELECT * FROM user_form_config WHERE "userId" = $1', [req.params.userId]);
-        res.json(config ? { hiddenFields: JSON.parse(config.hidden_fields) } : { hiddenFields: [] });
-    } catch (e) { res.json({ hiddenFields: [] }); }
+        res.json(config ? { hiddenFields: JSON.parse(config.hidden_fields), customOptions: JSON.parse(config.custom_options || '{}') } : { hiddenFields: [], customOptions: {} });
+    } catch (e) { res.json({ hiddenFields: [], customOptions: {} }); }
 });
 
 app.get('/api/user-form-config', authMiddleware, async (req, res) => {
     try {
         const config = await queryOne('SELECT * FROM user_form_config WHERE "userId" = $1', [req.user.id]);
-        res.json(config ? { hiddenFields: JSON.parse(config.hidden_fields) } : { hiddenFields: [] });
-    } catch (e) { res.json({ hiddenFields: [] }); }
+        res.json(config ? { hiddenFields: JSON.parse(config.hidden_fields), customOptions: JSON.parse(config.custom_options || '{}') } : { hiddenFields: [], customOptions: {} });
+    } catch (e) { res.json({ hiddenFields: [], customOptions: {} }); }
 });
 
 app.put('/api/user-form-config/:userId', authMiddleware, adminMiddleware, async (req, res) => {
     try {
-        const { hiddenFields } = req.body;
-        if (!Array.isArray(hiddenFields)) return res.status(400).json({ error: 'ข้อมูลไม่ถูกต้อง' });
+        const { hiddenFields, customOptions } = req.body;
+        const hf = JSON.stringify(hiddenFields || []);
+        const co = JSON.stringify(customOptions || {});
         const existing = await queryOne('SELECT id FROM user_form_config WHERE "userId" = $1', [req.params.userId]);
         if (existing) {
-            await run('UPDATE user_form_config SET hidden_fields = $1 WHERE "userId" = $2', [JSON.stringify(hiddenFields), req.params.userId]);
+            await run('UPDATE user_form_config SET hidden_fields = $1, custom_options = $2 WHERE "userId" = $3', [hf, co, req.params.userId]);
         } else {
-            await insert('INSERT INTO user_form_config ("userId", hidden_fields) VALUES ($1, $2)', [req.params.userId, JSON.stringify(hiddenFields)]);
+            await insert('INSERT INTO user_form_config ("userId", hidden_fields, custom_options) VALUES ($1, $2, $3)', [req.params.userId, hf, co]);
         }
         res.json({ message: 'บันทึกการตั้งค่าฟอร์มสำเร็จ' });
     } catch (e) { res.status(500).json({ error: e.message }); }

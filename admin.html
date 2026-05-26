@@ -1316,14 +1316,17 @@
             { key: 'supervisor', label: 'ผู้ตรวจสอบ' }
         ];
 
+        const editableOptionFields = ['officers', 'objectives', 'leadSources', 'products', 'provinces', 'competitors', 'supervisors', 'nextSteps'];
+
+        let currentEditUserId = null;
+        let currentUserConfig = { hiddenFields: [], customOptions: {} };
+
         async function editFormConfig(userId, fullName) {
-            // Load current config
-            let hiddenFields = [];
+            currentEditUserId = userId;
             try {
                 const res = await fetch(API + '/api/user-form-config/' + userId, { headers: { 'Authorization': 'Bearer ' + token } });
-                const data = await res.json();
-                hiddenFields = data.hiddenFields || [];
-            } catch(e) {}
+                currentUserConfig = await res.json();
+            } catch(e) { currentUserConfig = { hiddenFields: [], customOptions: {} }; }
 
             let modal = document.getElementById('formConfigModal');
             if (modal) modal.remove();
@@ -1332,35 +1335,122 @@
             modal.id = 'formConfigModal';
             modal.innerHTML = `
                 <div style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;">
-                    <div style="background:#fff;border-radius:16px;padding:30px;max-width:500px;width:90%;max-height:85vh;overflow-y:auto;position:relative;">
+                    <div style="background:#fff;border-radius:16px;padding:30px;max-width:600px;width:95%;max-height:90vh;overflow-y:auto;position:relative;">
                         <button onclick="document.getElementById('formConfigModal').remove()" style="position:absolute;top:12px;right:16px;background:none;border:none;font-size:1.5rem;cursor:pointer;color:#888;">✕</button>
-                        <h3 style="margin-bottom:8px;color:#333;">⚙️ ตั้งค่าฟอร์ม</h3>
-                        <p style="font-size:0.85rem;color:#888;margin-bottom:16px;">สำหรับ: <strong>${fullName}</strong><br>เลือกหัวข้อที่ต้องการ <strong>ซ่อน</strong> (ไม่แสดงในฟอร์มของ user นี้)</p>
-                        <div id="formConfigFields">
-                            ${allFormFields.map(f => `
-                                <label style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f0f0f0;cursor:pointer;">
-                                    <input type="checkbox" value="${f.key}" ${hiddenFields.includes(f.key) ? 'checked' : ''} style="width:18px;height:18px;">
-                                    <span style="font-size:0.9rem;">${f.label}</span>
-                                </label>
-                            `).join('')}
+                        <h3 style="margin-bottom:8px;color:#333;">⚙️ ตั้งค่าฟอร์มสำหรับ: ${fullName}</h3>
+                        <p style="font-size:0.85rem;color:#888;margin-bottom:16px;">กำหนดหัวข้อที่แสดง/ซ่อน และตัวเลือกเฉพาะ user นี้</p>
+
+                        <div style="border:1px solid #eee;border-radius:8px;padding:16px;margin-bottom:16px;">
+                            <h4 style="font-size:0.9rem;margin-bottom:10px;">📋 ซ่อน/แสดงหัวข้อ</h4>
+                            <div id="formConfigFields">
+                                ${allFormFields.map(f => `
+                                    <label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;">
+                                        <input type="checkbox" class="hiddenFieldCb" value="${f.key}" ${(currentUserConfig.hiddenFields||[]).includes(f.key) ? 'checked' : ''} style="width:16px;height:16px;">
+                                        <span style="font-size:0.85rem;${(currentUserConfig.hiddenFields||[]).includes(f.key) ? 'text-decoration:line-through;color:#999;' : ''}">${f.label}</span>
+                                    </label>
+                                `).join('')}
+                            </div>
                         </div>
-                        <p id="formConfigMsg" style="font-size:0.85rem;margin-top:12px;"></p>
-                        <button onclick="saveFormConfig(${userId})" style="width:100%;margin-top:16px;background:#6c63ff;color:#fff;border:none;padding:12px;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;font-family:inherit;">💾 บันทึก</button>
+
+                        <div style="border:1px solid #eee;border-radius:8px;padding:16px;margin-bottom:16px;">
+                            <h4 style="font-size:0.9rem;margin-bottom:10px;">📝 กำหนดตัวเลือกเฉพาะ user นี้</h4>
+                            <p style="font-size:0.8rem;color:#888;margin-bottom:10px;">ถ้าไม่กรอก จะใช้ตัวเลือกกลาง (default)</p>
+                            <select id="userOptionFieldSelect" onchange="loadUserFieldOptions()" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;margin-bottom:10px;font-family:inherit;">
+                                <option value="">-- เลือกหัวข้อ --</option>
+                                <option value="officers">ชื่อผู้ปฏิบัติงาน</option>
+                                <option value="objectives">วัตถุประสงค์</option>
+                                <option value="leadSources">แหล่งที่มาลูกค้า</option>
+                                <option value="products">ผลิตภัณฑ์</option>
+                                <option value="provinces">พื้นที่/จังหวัด</option>
+                                <option value="competitors">คู่แข่ง</option>
+                                <option value="supervisors">ผู้ตรวจสอบ</option>
+                                <option value="nextSteps">Next Step</option>
+                            </select>
+                            <div id="userOptionEditor" style="display:none;">
+                                <div id="userOptionsList"></div>
+                                <div style="display:flex;gap:8px;margin-top:8px;">
+                                    <input type="text" id="userNewOption" placeholder="เพิ่มตัวเลือก" style="flex:1;padding:8px;border:1px solid #ddd;border-radius:6px;font-family:inherit;">
+                                    <button onclick="addUserOption()" style="background:#4caf50;color:#fff;border:none;padding:8px 14px;border-radius:6px;cursor:pointer;">+</button>
+                                </div>
+                                <button onclick="clearUserOptions()" style="margin-top:8px;background:none;border:1px solid #e74c3c;color:#e74c3c;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:0.8rem;">ล้าง (ใช้ค่ากลาง)</button>
+                            </div>
+                        </div>
+
+                        <p id="formConfigMsg" style="font-size:0.85rem;margin-bottom:12px;"></p>
+                        <button onclick="saveFormConfig()" style="width:100%;background:#6c63ff;color:#fff;border:none;padding:12px;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;font-family:inherit;">💾 บันทึกทั้งหมด</button>
                     </div>
                 </div>
             `;
             document.body.appendChild(modal);
         }
 
-        async function saveFormConfig(userId) {
-            const checkboxes = document.querySelectorAll('#formConfigFields input[type="checkbox"]:checked');
+        let currentUserFieldKey = '';
+        let currentUserFieldOptions = [];
+
+        function loadUserFieldOptions() {
+            const key = document.getElementById('userOptionFieldSelect').value;
+            if (!key) { document.getElementById('userOptionEditor').style.display = 'none'; return; }
+            document.getElementById('userOptionEditor').style.display = 'block';
+            currentUserFieldKey = key;
+
+            if (currentUserConfig.customOptions && currentUserConfig.customOptions[key]) {
+                currentUserFieldOptions = [...currentUserConfig.customOptions[key]];
+            } else {
+                currentUserFieldOptions = [];
+            }
+            renderUserOptions();
+        }
+
+        function renderUserOptions() {
+            const container = document.getElementById('userOptionsList');
+            if (currentUserFieldOptions.length === 0) {
+                container.innerHTML = '<p style="font-size:0.8rem;color:#888;padding:8px 0;">ไม่ได้กำหนด (ใช้ค่ากลาง)</p>';
+                return;
+            }
+            container.innerHTML = currentUserFieldOptions.map((opt, i) => `
+                <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+                    <input type="text" value="${opt.replace(/"/g, '&quot;')}" onchange="currentUserFieldOptions[${i}]=this.value" style="flex:1;padding:6px 10px;border:1px solid #ddd;border-radius:4px;font-family:inherit;font-size:0.85rem;">
+                    <button onclick="currentUserFieldOptions.splice(${i},1);saveUserOptionToConfig();renderUserOptions()" style="background:#e74c3c;color:#fff;border:none;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:0.75rem;">✕</button>
+                </div>
+            `).join('');
+        }
+
+        function addUserOption() {
+            const input = document.getElementById('userNewOption');
+            if (!input.value.trim()) return;
+            currentUserFieldOptions.push(input.value.trim());
+            input.value = '';
+            saveUserOptionToConfig();
+            renderUserOptions();
+        }
+
+        function clearUserOptions() {
+            currentUserFieldOptions = [];
+            saveUserOptionToConfig();
+            renderUserOptions();
+        }
+
+        function saveUserOptionToConfig() {
+            if (!currentUserConfig.customOptions) currentUserConfig.customOptions = {};
+            if (currentUserFieldOptions.length > 0) {
+                currentUserConfig.customOptions[currentUserFieldKey] = currentUserFieldOptions;
+            } else {
+                delete currentUserConfig.customOptions[currentUserFieldKey];
+            }
+        }
+
+        async function saveFormConfig() {
+            const checkboxes = document.querySelectorAll('.hiddenFieldCb:checked');
             const hiddenFields = Array.from(checkboxes).map(cb => cb.value);
+            // Save current field options before submitting
+            saveUserOptionToConfig();
+
             const msgEl = document.getElementById('formConfigMsg');
             try {
-                const res = await fetch(API + '/api/user-form-config/' + userId, {
+                const res = await fetch(API + '/api/user-form-config/' + currentEditUserId, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                    body: JSON.stringify({ hiddenFields })
+                    body: JSON.stringify({ hiddenFields, customOptions: currentUserConfig.customOptions || {} })
                 });
                 const data = await res.json();
                 if (res.ok) {
