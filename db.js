@@ -85,6 +85,13 @@ async function initDB() {
                 "questionId" INTEGER NOT NULL,
                 answer TEXT
             );
+
+            CREATE TABLE IF NOT EXISTS form_options (
+                id SERIAL PRIMARY KEY,
+                field_key TEXT UNIQUE NOT NULL,
+                field_label TEXT NOT NULL,
+                options TEXT NOT NULL
+            );
         `);
         console.log('Database tables initialized');
     } finally {

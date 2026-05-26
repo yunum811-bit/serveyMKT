@@ -416,8 +416,37 @@
 
             <!-- Questions Tab -->
             <div class="tab-content" id="tab-questions">
+                <!-- Main Form Options -->
                 <div class="form-card">
-                    <h3>➕ เพิ่มคำถามใหม่</h3>
+                    <h3>📝 แก้ไขตัวเลือกคำถามหลัก</h3>
+                    <p style="font-size:0.85rem;color:#888;margin-bottom:16px;">เลือกหัวข้อที่ต้องการแก้ไข แล้วเพิ่ม/ลบตัวเลือกได้</p>
+                    <div class="form-row">
+                        <select id="mainFieldSelect" style="flex:1;padding:10px;border:2px solid #e0e0e0;border-radius:8px;font-family:inherit;" onchange="loadFieldOptions()">
+                            <option value="">-- เลือกหัวข้อ --</option>
+                            <option value="officers">ชื่อ-นามสกุล ผู้ปฏิบัติงาน</option>
+                            <option value="objectives">วัตถุประสงค์ / ลักษณะงาน</option>
+                            <option value="leadSources">แหล่งที่มาของลูกค้า</option>
+                            <option value="products">ผลิตภัณฑ์ทางการเงิน</option>
+                            <option value="provinces">พื้นที่/จังหวัด</option>
+                            <option value="competitors">คู่แข่ง</option>
+                            <option value="supervisors">ผู้ตรวจสอบ / ผู้บังคับบัญชา</option>
+                            <option value="nextSteps">Next Step</option>
+                        </select>
+                    </div>
+                    <div id="fieldEditor" style="display:none;margin-top:16px;">
+                        <div id="fieldOptionsList" style="margin-bottom:12px;"></div>
+                        <div class="form-row">
+                            <input type="text" id="newOptionText" placeholder="เพิ่มตัวเลือกใหม่" style="flex:1;">
+                            <button class="btn-add" onclick="addFieldOption()">+ เพิ่ม</button>
+                        </div>
+                        <button onclick="saveFieldOptions()" style="margin-top:12px;background:#6c63ff;color:#fff;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:500;">💾 บันทึกทั้งหมด</button>
+                        <span id="fieldMsg" style="margin-left:12px;font-size:0.85rem;"></span>
+                    </div>
+                </div>
+
+                <!-- Custom Questions -->
+                <div class="form-card">
+                    <h3>➕ เพิ่มคำถามใหม่ (คำถามเพิ่มเติม)</h3>
                     <div class="form-row">
                         <input type="text" id="newQLabel" placeholder="คำถาม" style="flex:2;">
                         <select id="newQType" style="padding:10px;border:2px solid #e0e0e0;border-radius:8px;font-family:inherit;">
@@ -551,6 +580,7 @@
             if (currentUser.role === 'admin') {
                 loadUsers();
                 loadQuestions();
+                loadFormOptions();
             }
         }
 
@@ -1107,6 +1137,87 @@
                 msgEl.style.color = '#e74c3c';
                 msgEl.textContent = '✗ ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้';
             }
+        }
+
+        // === Main Form Options Editor ===
+        const defaultOptions = {
+            officers: { label: 'ชื่อ-นามสกุล ผู้ปฏิบัติงาน', options: ['นางสาว มนัสสนันท์ ตลับเพชร', 'นาย ณัฐวุฒิ ฉิมไทย', 'นาย พิทักษ์พงษ์ งามจตุรภัทร์'] },
+            objectives: { label: 'วัตถุประสงค์ / ลักษณะงาน', options: ['พบลูกค้าใหม่ (New Prospect)', 'พบลูกค้าเก่า (Existing Customer)', 'Visit โครงการ (Site Visit)', 'ลงนามสัญญา (Contract Signing)', 'ตรวจสภาพสินค้าก่อนส่งมอบ', 'โอนสิทธิการรับเงิน', 'Visit ลูกหนี้การค้า/วางบิล', 'เปิดบัญชีควบคุม BBL/ลงนามเช็ค'] },
+            leadSources: { label: 'แหล่งที่มาของลูกค้า', options: ['เว็บไซต์บริษัท', 'Line OA', 'Tele Sales', 'ลูกค้าแนะนำ', 'ลูกค้าเก่า', 'Lead Call Marketing'] },
+            products: { label: 'ผลิตภัณฑ์ทางการเงิน', options: ['Factoring', 'Loan For Project', 'Trade Finance', 'Leasing & Hire Purchase', 'จ้างที่ปรึกษา'] },
+            provinces: { label: 'พื้นที่/จังหวัด', options: ['กรุงเทพมหานคร', 'นนทบุรี', 'ปทุมธานี', 'สมุทรปราการ', 'ชลบุรี'] },
+            competitors: { label: 'คู่แข่ง', options: ['KBANK', 'TTB', 'KTB', 'SME D BANK', 'AIRA', 'LITI', 'FS CAPITAL'] },
+            supervisors: { label: 'ผู้ตรวจสอบ / ผู้บังคับบัญชา', options: ['คุณธีรวัฒน์ ขำเมือง (พี่เอ)', 'คุณมนัสสนันท์ ตลับเพชร (แนน)'] },
+            nextSteps: { label: 'Next Step', options: ['ส่งเงื่อนไขข้อเสนอ', 'นัดหมายเข้าพบครั้งถัดไป', 'ติดตามเรื่อง', 'เตรียมเอกสาร'] }
+        };
+
+        let formOptionsCache = {};
+        let currentFieldKey = '';
+        let currentFieldOptions = [];
+
+        async function loadFormOptions() {
+            try {
+                const res = await fetch(API + '/api/form-options');
+                formOptionsCache = await res.json();
+            } catch(e) { formOptionsCache = {}; }
+        }
+
+        function loadFieldOptions() {
+            const key = document.getElementById('mainFieldSelect').value;
+            if (!key) { document.getElementById('fieldEditor').style.display = 'none'; return; }
+            document.getElementById('fieldEditor').style.display = 'block';
+            currentFieldKey = key;
+
+            if (formOptionsCache[key]) {
+                currentFieldOptions = [...formOptionsCache[key].options];
+            } else {
+                currentFieldOptions = [...defaultOptions[key].options];
+            }
+            renderFieldOptions();
+        }
+
+        function renderFieldOptions() {
+            const container = document.getElementById('fieldOptionsList');
+            container.innerHTML = currentFieldOptions.map((opt, i) => `
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                    <input type="text" value="${opt.replace(/"/g, '&quot;')}" onchange="currentFieldOptions[${i}]=this.value" style="flex:1;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-family:inherit;">
+                    <button onclick="currentFieldOptions.splice(${i},1);renderFieldOptions()" style="background:#e74c3c;color:#fff;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:0.8rem;">✕</button>
+                </div>
+            `).join('');
+        }
+
+        function addFieldOption() {
+            const input = document.getElementById('newOptionText');
+            const val = input.value.trim();
+            if (!val) return;
+            currentFieldOptions.push(val);
+            input.value = '';
+            renderFieldOptions();
+        }
+
+        async function saveFieldOptions() {
+            const msgEl = document.getElementById('fieldMsg');
+            const label = defaultOptions[currentFieldKey].label;
+            try {
+                const res = await fetch(API + '/api/form-options/' + currentFieldKey, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({ label, options: currentFieldOptions })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    msgEl.style.color = '#4caf50';
+                    msgEl.textContent = '✓ บันทึกสำเร็จ';
+                    formOptionsCache[currentFieldKey] = { label, options: currentFieldOptions };
+                } else {
+                    msgEl.style.color = '#e74c3c';
+                    msgEl.textContent = '✗ ' + data.error;
+                }
+            } catch(e) {
+                msgEl.style.color = '#e74c3c';
+                msgEl.textContent = '✗ ไม่สามารถบันทึกได้';
+            }
+            setTimeout(() => { msgEl.textContent = ''; }, 3000);
         }
     </script>
 </body>

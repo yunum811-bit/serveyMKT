@@ -352,3 +352,79 @@ function loadCustomQuestions() {
 
 // Load custom questions on page load
 loadCustomQuestions();
+
+// Load editable form options from API
+loadFormOptions();
+
+async function loadFormOptions() {
+    try {
+        const res = await fetch('/api/form-options');
+        const data = await res.json();
+        if (!data || Object.keys(data).length === 0) return;
+
+        // Update officers
+        if (data.officers) updateRadioGroup('officer', data.officers.options);
+        // Update objectives
+        if (data.objectives) updateCheckboxGroup('objective', data.objectives.options);
+        // Update lead sources
+        if (data.leadSources) updateRadioGroup('leadSource', data.leadSources.options, true);
+        // Update products
+        if (data.products) updateCheckboxGroup('product', data.products.options, true);
+        // Update provinces
+        if (data.provinces) updateRadioGroup('province', data.provinces.options, true);
+        // Update competitors
+        if (data.competitors) updateCheckboxGroup('competitor', data.competitors.options, true);
+        // Update supervisors
+        if (data.supervisors) updateRadioGroup('supervisor', data.supervisors.options);
+        // Update next steps
+        if (data.nextSteps) updateCheckboxGroup('nextStep', data.nextSteps.options, true);
+    } catch(e) { /* use defaults */ }
+}
+
+function updateRadioGroup(name, options, hasOther) {
+    const container = document.querySelector(`input[name="${name}"]`)?.closest('.radio-group');
+    if (!container) return;
+    const otherInput = container.parentElement.querySelector('.conditional-input');
+    container.innerHTML = options.map(opt =>
+        `<label class="radio-item">
+            <input type="radio" name="${name}" value="${opt}">
+            <span class="radio-custom"></span>
+            <span>${opt}</span>
+        </label>`
+    ).join('') + (hasOther ? `<label class="radio-item">
+            <input type="radio" name="${name}" value="อื่นๆ" id="${name}Other">
+            <span class="radio-custom"></span>
+            <span>อื่นๆ</span>
+        </label>` : '');
+    if (hasOther && otherInput) {
+        const otherRadio = document.getElementById(name + 'Other');
+        if (otherRadio) {
+            document.querySelectorAll(`input[name="${name}"]`).forEach(r => {
+                r.addEventListener('change', () => { otherInput.style.display = otherRadio.checked ? 'block' : 'none'; });
+            });
+        }
+    }
+}
+
+function updateCheckboxGroup(name, options, hasOther) {
+    const container = document.querySelector(`input[name="${name}"]`)?.closest('.checkbox-group');
+    if (!container) return;
+    const otherInput = container.parentElement.querySelector('.conditional-input');
+    container.innerHTML = options.map(opt =>
+        `<label class="checkbox-item">
+            <input type="checkbox" name="${name}" value="${opt}">
+            <span class="checkbox-custom"></span>
+            <span>${opt}</span>
+        </label>`
+    ).join('') + (hasOther ? `<label class="checkbox-item">
+            <input type="checkbox" name="${name}" value="อื่นๆ" id="${name}Other">
+            <span class="checkbox-custom"></span>
+            <span>อื่นๆ</span>
+        </label>` : '');
+    if (hasOther && otherInput) {
+        const otherCb = document.getElementById(name + 'Other');
+        if (otherCb) {
+            otherCb.addEventListener('change', () => { otherInput.style.display = otherCb.checked ? 'block' : 'none'; });
+        }
+    }
+}

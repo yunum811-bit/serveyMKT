@@ -362,6 +362,30 @@ app.get('/api/reports/:id/answers', authMiddleware, async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// === FORM OPTIONS (editable main questions) ===
+app.get('/api/form-options', async (req, res) => {
+    try {
+        const rows = await query('SELECT * FROM form_options ORDER BY id');
+        const result = {};
+        rows.forEach(r => { result[r.field_key] = { label: r.field_label, options: JSON.parse(r.options) }; });
+        res.json(result);
+    } catch (e) { res.json({}); }
+});
+
+app.put('/api/form-options/:key', authMiddleware, adminMiddleware, async (req, res) => {
+    try {
+        const { label, options } = req.body;
+        if (!options || !Array.isArray(options)) return res.status(400).json({ error: 'กรุณาระบุตัวเลือก' });
+        const existing = await queryOne('SELECT id FROM form_options WHERE field_key = $1', [req.params.key]);
+        if (existing) {
+            await run('UPDATE form_options SET field_label = $1, options = $2 WHERE field_key = $3', [label, JSON.stringify(options), req.params.key]);
+        } else {
+            await insert('INSERT INTO form_options (field_key, field_label, options) VALUES ($1, $2, $3)', [req.params.key, label, JSON.stringify(options)]);
+        }
+        res.json({ message: 'บันทึกสำเร็จ' });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // === START SERVER ===
 async function start() {
     await initDB();
