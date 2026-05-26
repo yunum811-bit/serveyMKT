@@ -63,8 +63,19 @@ function authMiddleware(req, res, next) {
     }
 }
 
+// Roles: admin > md > mgr > user
 function adminMiddleware(req, res, next) {
-    if (req.user.role !== 'admin') return res.status(403).json({ error: 'ไม่มีสิทธิ์เข้าถึง' });
+    if (req.user.role !== 'admin') return res.status(403).json({ error: 'ไม่มีสิทธิ์เข้าถึง (admin only)' });
+    next();
+}
+
+function mdMiddleware(req, res, next) {
+    if (!['admin', 'md'].includes(req.user.role)) return res.status(403).json({ error: 'ไม่มีสิทธิ์เข้าถึง (MD+ only)' });
+    next();
+}
+
+function mgrMiddleware(req, res, next) {
+    if (!['admin', 'md', 'mgr'].includes(req.user.role)) return res.status(403).json({ error: 'ไม่มีสิทธิ์เข้าถึง (MGR+ only)' });
     next();
 }
 
@@ -114,7 +125,7 @@ app.put('/api/auth/change-password', authMiddleware, async (req, res) => {
 });
 
 // === USER ROUTES ===
-app.get('/api/users', authMiddleware, adminMiddleware, async (req, res) => {
+app.get('/api/users', authMiddleware, mdMiddleware, async (req, res) => {
     try {
         const users = await query('SELECT id, username, "fullName", role, "createdAt" FROM users ORDER BY "createdAt" DESC');
         res.json(users);
@@ -207,7 +218,7 @@ app.get('/api/reports', authMiddleware, async (req, res) => {
             params.push(String(year));
         }
         if (officer) { where += ` AND officer = $${idx++}`; params.push(officer); }
-        if (req.user.role !== 'admin') { where += ` AND "userId" = $${idx++}`; params.push(req.user.id); }
+        if (req.user.role === 'user') { where += ` AND "userId" = $${idx++}`; params.push(req.user.id); }
 
         const reports = await query(`SELECT * FROM reports ${where} ORDER BY "workDate" DESC, "createdAt" DESC`, params);
         res.json(reports);
@@ -229,7 +240,7 @@ app.get('/api/reports/summary', authMiddleware, async (req, res) => {
             where += ` AND substring("workDate", 1, 4) = $${idx++}`;
             params.push(String(year));
         }
-        if (req.user.role !== 'admin') { where += ` AND "userId" = $${idx++}`; params.push(req.user.id); }
+        if (req.user.role === 'user') { where += ` AND "userId" = $${idx++}`; params.push(req.user.id); }
 
         const summary = await queryOne(`
             SELECT COUNT(*) as "totalReports", COUNT(DISTINCT "companyName") as "totalCompanies",
@@ -257,7 +268,7 @@ app.get('/api/reports/export/excel', authMiddleware, async (req, res) => {
         if (month && year) { where += ` AND substring("workDate", 1, 7) = $${idx++}`; params.push(`${year}-${String(month).padStart(2, '0')}`); }
         else if (year) { where += ` AND substring("workDate", 1, 4) = $${idx++}`; params.push(String(year)); }
         if (officer) { where += ` AND officer = $${idx++}`; params.push(officer); }
-        if (req.user.role !== 'admin') { where += ` AND "userId" = $${idx++}`; params.push(req.user.id); }
+        if (req.user.role === 'user') { where += ` AND "userId" = $${idx++}`; params.push(req.user.id); }
 
         const reports = await query(`SELECT * FROM reports ${where} ORDER BY "workDate" DESC`, params);
         const workbook = new ExcelJS.Workbook();
@@ -297,12 +308,12 @@ app.get('/api/reports/:id', authMiddleware, async (req, res) => {
     try {
         const report = await queryOne('SELECT * FROM reports WHERE id = $1', [req.params.id]);
         if (!report) return res.status(404).json({ error: 'ไม่พบรายงาน' });
-        if (req.user.role !== 'admin' && report.userId !== req.user.id) return res.status(403).json({ error: 'ไม่มีสิทธิ์' });
+        if (req.user.role === 'user' && report.userId !== req.user.id) return res.status(403).json({ error: 'ไม่มีสิทธิ์' });
         res.json(report);
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.delete('/api/reports/:id', authMiddleware, adminMiddleware, async (req, res) => {
+app.delete('/api/reports/:id', authMiddleware, mdMiddleware, async (req, res) => {
     try { await run('DELETE FROM reports WHERE id = $1', [req.params.id]); res.json({ message: 'ลบรายงานสำเร็จ' }); }
     catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -362,6 +373,37 @@ app.get('/api/reports/:id/answers', authMiddleware, async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// === APPROVAL ROUTES ===
+// MGR approves report (pending -> mgr_approved)
+app.put('/api/reports/:id/approve-mgr', authMiddleware, mgrMiddleware, async (req, res) => {
+    try {
+        const { comment } = req.body;
+        await run('UPDATE reports SET status = $1, "approvedByMgr" = $2, "mgrComment" = $3 WHERE id = $4',
+            ['mgr_approved', req.user.fullName, comment || null, req.params.id]);
+        res.json({ message: 'MGR อนุมัติสำเร็จ' });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// MD approves report (mgr_approved -> approved)
+app.put('/api/reports/:id/approve-md', authMiddleware, mdMiddleware, async (req, res) => {
+    try {
+        const { comment } = req.body;
+        await run('UPDATE reports SET status = $1, "approvedByMd" = $2, "mdComment" = $3 WHERE id = $4',
+            ['approved', req.user.fullName, comment || null, req.params.id]);
+        res.json({ message: 'MD อนุมัติสำเร็จ' });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Reject report (any approver)
+app.put('/api/reports/:id/reject', authMiddleware, mgrMiddleware, async (req, res) => {
+    try {
+        const { comment } = req.body;
+        const field = ['md', 'admin'].includes(req.user.role) ? '"mdComment"' : '"mgrComment"';
+        await run(`UPDATE reports SET status = 'rejected', ${field} = $1 WHERE id = $2`, [comment || 'ไม่อนุมัติ', req.params.id]);
+        res.json({ message: 'ปฏิเสธรายงานแล้ว' });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // === FORM OPTIONS (editable main questions) ===
 app.get('/api/form-options', async (req, res) => {
     try {
@@ -407,3 +449,4 @@ async function start() {
     });
 }
 start().catch(e => { console.error('Failed to start:', e); process.exit(1); });
+

@@ -376,6 +376,7 @@
                                 <th>บริษัท/สถานที่</th>
                                 <th>วัตถุประสงค์</th>
                                 <th>ระดับดีล</th>
+                                <th>สถานะ</th>
                                 <th>คะแนน</th>
                             </tr>
                         </thead>
@@ -622,9 +623,10 @@
         function renderReports(reports) {
             const tbody = document.getElementById('reportsTable');
             if (reports.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#888;padding:30px;">ไม่พบข้อมูลรายงาน</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#888;padding:30px;">ไม่พบข้อมูลรายงาน</td></tr>';
                 return;
             }
+            const statusBadge = { pending: '<span style="background:#fff3e0;color:#f57c00;padding:2px 8px;border-radius:10px;font-size:0.75rem;">รอตรวจ</span>', mgr_approved: '<span style="background:#e3f2fd;color:#1976d2;padding:2px 8px;border-radius:10px;font-size:0.75rem;">รอ MD</span>', approved: '<span style="background:#e8f5e9;color:#388e3c;padding:2px 8px;border-radius:10px;font-size:0.75rem;">อนุมัติ</span>', rejected: '<span style="background:#fce4ec;color:#c62828;padding:2px 8px;border-radius:10px;font-size:0.75rem;">ไม่อนุมัติ</span>' };
             tbody.innerHTML = reports.map(r => {
                 let badge = '';
                 if (r.dealProbability) {
@@ -636,8 +638,9 @@
                     <td>${r.workDate}</td>
                     <td>${r.officer}</td>
                     <td>${r.companyName}</td>
-                    <td>${r.objectives ? r.objectives.substring(0, 40) + (r.objectives.length > 40 ? '...' : '') : '-'}</td>
+                    <td>${r.objectives ? r.objectives.substring(0, 30) + (r.objectives.length > 30 ? '...' : '') : '-'}</td>
                     <td>${badge || '-'}</td>
+                    <td>${statusBadge[r.status || 'pending']}</td>
                     <td>${r.successRating || '-'}/5</td>
                 </tr>`;
             }).join('');
@@ -650,8 +653,34 @@
                 });
                 if (!res.ok) return;
                 const r = await res.json();
+
+                const statusLabels = { pending: '⏳ รอ MGR ตรวจ', mgr_approved: '✅ MGR อนุมัติ - รอ MD', approved: '✅ อนุมัติแล้ว', rejected: '❌ ไม่อนุมัติ' };
+                const statusColor = { pending: '#ff9800', mgr_approved: '#2196f3', approved: '#4caf50', rejected: '#e74c3c' };
+                const status = r.status || 'pending';
+
+                let approvalButtons = '';
+                if (currentUser.role === 'mgr' && status === 'pending') {
+                    approvalButtons = `<div style="margin-top:16px;display:flex;gap:8px;">
+                        <button onclick="approveReport(${r.id},'mgr')" style="flex:1;background:#4caf50;color:#fff;border:none;padding:10px;border-radius:8px;cursor:pointer;font-family:inherit;">✅ MGR อนุมัติ</button>
+                        <button onclick="rejectReport(${r.id})" style="flex:1;background:#e74c3c;color:#fff;border:none;padding:10px;border-radius:8px;cursor:pointer;font-family:inherit;">❌ ไม่อนุมัติ</button>
+                    </div>`;
+                } else if (['md', 'admin'].includes(currentUser.role) && (status === 'pending' || status === 'mgr_approved')) {
+                    approvalButtons = `<div style="margin-top:16px;display:flex;gap:8px;">
+                        ${status === 'pending' ? '<button onclick="approveReport('+r.id+',\'mgr\')" style="flex:1;background:#2196f3;color:#fff;border:none;padding:10px;border-radius:8px;cursor:pointer;font-family:inherit;">✅ MGR อนุมัติ</button>' : ''}
+                        <button onclick="approveReport(${r.id},'md')" style="flex:1;background:#4caf50;color:#fff;border:none;padding:10px;border-radius:8px;cursor:pointer;font-family:inherit;">✅ MD อนุมัติ</button>
+                        <button onclick="rejectReport(${r.id})" style="flex:1;background:#e74c3c;color:#fff;border:none;padding:10px;border-radius:8px;cursor:pointer;font-family:inherit;">❌ ไม่อนุมัติ</button>
+                    </div>`;
+                }
+
+                const photoSrc1 = r.photo1 ? (r.photo1.startsWith('http') ? r.photo1 : '/uploads/' + r.photo1) : '';
+                const photoSrc2 = r.photo2 ? (r.photo2.startsWith('http') ? r.photo2 : '/uploads/' + r.photo2) : '';
+
                 const detail = `
                     <div style="text-align:left;max-height:70vh;overflow-y:auto;">
+                        <div style="background:${statusColor[status]};color:#fff;padding:8px 14px;border-radius:8px;margin-bottom:12px;font-weight:500;">${statusLabels[status] || status}</div>
+                        ${r.approvedByMgr ? '<p style="font-size:0.85rem;color:#555;">MGR: ' + r.approvedByMgr + (r.mgrComment ? ' - "' + r.mgrComment + '"' : '') + '</p>' : ''}
+                        ${r.approvedByMd ? '<p style="font-size:0.85rem;color:#555;">MD: ' + r.approvedByMd + (r.mdComment ? ' - "' + r.mdComment + '"' : '') + '</p>' : ''}
+                        <hr style="margin:10px 0;border:none;border-top:1px solid #eee;">
                         <p><strong>เจ้าหน้าที่:</strong> ${r.officer}</p>
                         <p><strong>วันที่:</strong> ${r.workDate}</p>
                         <p><strong>ช่วงเวลา:</strong> ${r.timeSlot}${r.startTime ? ' (' + r.startTime + ' - ' + r.endTime + ')' : ''}</p>
@@ -676,14 +705,49 @@
                         <p><strong>พื้นที่:</strong> ${r.province}${r.provinceOther ? ' (' + r.provinceOther + ')' : ''}</p>
                         <p><strong>ผู้ตรวจสอบ:</strong> ${r.supervisor}</p>
                         <hr style="margin:10px 0;border:none;border-top:1px solid #eee;">
-                        ${r.photo1 ? '<p><strong>ภาพ 1:</strong> ' + (r.photoDesc1 || '') + '</p><img src="/uploads/' + r.photo1 + '" style="max-width:100%;border-radius:8px;margin-bottom:10px;">' : ''}
-                        ${r.photo2 ? '<p><strong>ภาพ 2:</strong> ' + (r.photoDesc2 || '') + '</p><img src="/uploads/' + r.photo2 + '" style="max-width:100%;border-radius:8px;">' : ''}
+                        ${photoSrc1 ? '<p><strong>ภาพ 1:</strong> ' + (r.photoDesc1 || '') + '</p><img src="' + photoSrc1 + '" style="max-width:100%;border-radius:8px;margin-bottom:10px;">' : ''}
+                        ${photoSrc2 ? '<p><strong>ภาพ 2:</strong> ' + (r.photoDesc2 || '') + '</p><img src="' + photoSrc2 + '" style="max-width:100%;border-radius:8px;">' : ''}
+                        ${approvalButtons}
                     </div>
                 `;
                 showDetailModal(r.companyName + ' - ' + r.workDate, detail);
             } catch (e) {
                 console.error(e);
             }
+        }
+
+        async function approveReport(id, level) {
+            const comment = prompt('ความเห็น (ไม่บังคับ):') || '';
+            try {
+                const url = level === 'mgr' ? '/api/reports/' + id + '/approve-mgr' : '/api/reports/' + id + '/approve-md';
+                const res = await fetch(API + url, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({ comment })
+                });
+                const data = await res.json();
+                alert(data.message || data.error);
+                const modal = document.getElementById('detailModal');
+                if (modal) modal.remove();
+                loadReports();
+            } catch(e) { alert('เกิดข้อผิดพลาด'); }
+        }
+
+        async function rejectReport(id) {
+            const comment = prompt('เหตุผลที่ไม่อนุมัติ:');
+            if (!comment) return;
+            try {
+                const res = await fetch(API + '/api/reports/' + id + '/reject', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({ comment })
+                });
+                const data = await res.json();
+                alert(data.message || data.error);
+                const modal = document.getElementById('detailModal');
+                if (modal) modal.remove();
+                loadReports();
+            } catch(e) { alert('เกิดข้อผิดพลาด'); }
         }
 
         function showDetailModal(title, content) {
@@ -823,8 +887,10 @@
                             <div style="margin-bottom:20px;">
                                 <label style="display:block;font-size:0.85rem;color:#555;margin-bottom:4px;">สิทธิ์</label>
                                 <select id="editRole" style="width:100%;padding:10px 14px;border:2px solid #e0e0e0;border-radius:8px;font-family:inherit;outline:none;">
-                                    <option value="user">user</option>
-                                    <option value="admin">admin</option>
+                                    <option value="user">พนักงาน (user)</option>
+                                    <option value="mgr">ผู้จัดการ (MGR)</option>
+                                    <option value="md">MD</option>
+                                    <option value="admin">Admin</option>
                                 </select>
                             </div>
                             <p id="editUserMsg" style="font-size:0.85rem;margin-bottom:12px;"></p>

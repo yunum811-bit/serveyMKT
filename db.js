@@ -65,6 +65,11 @@ async function initDB() {
                 competitors TEXT,
                 "competitorOther" TEXT,
                 supervisor TEXT NOT NULL,
+                status TEXT DEFAULT 'pending',
+                "approvedByMgr" TEXT,
+                "approvedByMd" TEXT,
+                "mgrComment" TEXT,
+                "mdComment" TEXT,
                 "createdAt" TIMESTAMP DEFAULT NOW()
             );
 
@@ -94,6 +99,18 @@ async function initDB() {
             );
         `);
         console.log('Database tables initialized');
+
+        // Add new columns if not exist (for existing databases)
+        const addCols = [
+            'ALTER TABLE reports ADD COLUMN IF NOT EXISTS status TEXT DEFAULT \'pending\'',
+            'ALTER TABLE reports ADD COLUMN IF NOT EXISTS "approvedByMgr" TEXT',
+            'ALTER TABLE reports ADD COLUMN IF NOT EXISTS "approvedByMd" TEXT',
+            'ALTER TABLE reports ADD COLUMN IF NOT EXISTS "mgrComment" TEXT',
+            'ALTER TABLE reports ADD COLUMN IF NOT EXISTS "mdComment" TEXT'
+        ];
+        for (const sql of addCols) {
+            try { await client.query(sql); } catch(e) { /* column may already exist */ }
+        }
     } finally {
         client.release();
     }
