@@ -921,6 +921,7 @@
                 if (q.options) {
                     try { opts = JSON.parse(q.options).join(', '); } catch(e) { opts = q.options; }
                 }
+                const qData = JSON.stringify(q).replace(/'/g, '&#39;').replace(/"/g, '&quot;');
                 return `<tr style="${!q.isActive ? 'opacity:0.5;' : ''}">
                     <td>${q.sortOrder}</td>
                     <td>${q.label}</td>
@@ -929,6 +930,7 @@
                     <td>${q.isRequired ? '✓' : '-'}</td>
                     <td>${q.isActive ? '<span style="color:#4caf50;">เปิดใช้</span>' : '<span style="color:#999;">ปิด</span>'}</td>
                     <td>
+                        <button class="btn-edit" onclick='editQuestion(${JSON.stringify(q)})'>✏️ แก้ไข</button>
                         ${q.isActive
                             ? '<button class="btn-delete" onclick="deleteQuestion(' + q.id + ')">ลบ</button>'
                             : '<button class="btn-add" style="padding:5px 12px;font-size:0.8rem;" onclick="restoreQuestion(' + q.id + ',\'' + q.label.replace(/'/g, "\\'") + '\',\'' + q.type + '\')">เปิดใช้</button>'
@@ -1003,6 +1005,103 @@
                 loadQuestions();
             } catch (e) {
                 console.error(e);
+            }
+        }
+
+        function editQuestion(q) {
+            let modal = document.getElementById('editQModal');
+            if (modal) modal.remove();
+
+            let opts = '';
+            if (q.options) {
+                try { opts = JSON.parse(q.options).join(', '); } catch(e) { opts = q.options; }
+            }
+
+            modal = document.createElement('div');
+            modal.id = 'editQModal';
+            modal.innerHTML = `
+                <div style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;">
+                    <div style="background:#fff;border-radius:16px;padding:30px;max-width:500px;width:90%;position:relative;">
+                        <button onclick="document.getElementById('editQModal').remove()" style="position:absolute;top:12px;right:16px;background:none;border:none;font-size:1.5rem;cursor:pointer;color:#888;">✕</button>
+                        <h3 style="margin-bottom:20px;color:#333;">✏️ แก้ไขคำถาม</h3>
+                        <input type="hidden" id="editQId" value="${q.id}">
+                        <div style="margin-bottom:12px;">
+                            <label style="display:block;font-size:0.85rem;color:#555;margin-bottom:4px;">คำถาม</label>
+                            <input type="text" id="editQLabel" value="${q.label.replace(/"/g, '&quot;')}" style="width:100%;padding:10px 14px;border:2px solid #e0e0e0;border-radius:8px;font-family:inherit;outline:none;">
+                        </div>
+                        <div style="margin-bottom:12px;">
+                            <label style="display:block;font-size:0.85rem;color:#555;margin-bottom:4px;">ประเภท</label>
+                            <select id="editQType" style="width:100%;padding:10px 14px;border:2px solid #e0e0e0;border-radius:8px;font-family:inherit;outline:none;" onchange="document.getElementById('editQOptionsRow').style.display=(this.value==='radio'||this.value==='checkbox')?'block':'none'">
+                                <option value="text" ${q.type==='text'?'selected':''}>ข้อความ (Text)</option>
+                                <option value="textarea" ${q.type==='textarea'?'selected':''}>ข้อความยาว (Textarea)</option>
+                                <option value="radio" ${q.type==='radio'?'selected':''}>ตัวเลือกเดียว (Radio)</option>
+                                <option value="checkbox" ${q.type==='checkbox'?'selected':''}>หลายตัวเลือก (Checkbox)</option>
+                                <option value="number" ${q.type==='number'?'selected':''}>ตัวเลข (Number)</option>
+                                <option value="date" ${q.type==='date'?'selected':''}>วันที่ (Date)</option>
+                            </select>
+                        </div>
+                        <div style="margin-bottom:12px;${(q.type==='radio'||q.type==='checkbox')?'':'display:none;'}" id="editQOptionsRow">
+                            <label style="display:block;font-size:0.85rem;color:#555;margin-bottom:4px;">ตัวเลือก (คั่นด้วย ,)</label>
+                            <input type="text" id="editQOptions" value="${opts}" style="width:100%;padding:10px 14px;border:2px solid #e0e0e0;border-radius:8px;font-family:inherit;outline:none;">
+                        </div>
+                        <div style="margin-bottom:12px;display:flex;gap:16px;align-items:center;">
+                            <label style="display:flex;align-items:center;gap:6px;font-size:0.9rem;">
+                                <input type="checkbox" id="editQRequired" ${q.isRequired?'checked':''}> จำเป็นต้องตอบ
+                            </label>
+                            <label style="display:flex;align-items:center;gap:6px;font-size:0.9rem;">
+                                <input type="checkbox" id="editQActive" ${q.isActive?'checked':''}> เปิดใช้งาน
+                            </label>
+                        </div>
+                        <div style="margin-bottom:20px;">
+                            <label style="display:block;font-size:0.85rem;color:#555;margin-bottom:4px;">ลำดับ</label>
+                            <input type="number" id="editQOrder" value="${q.sortOrder||0}" style="width:100px;padding:10px 14px;border:2px solid #e0e0e0;border-radius:8px;font-family:inherit;outline:none;">
+                        </div>
+                        <p id="editQMsg" style="font-size:0.85rem;margin-bottom:12px;"></p>
+                        <button onclick="saveEditQuestion()" style="width:100%;background:#6c63ff;color:#fff;border:none;padding:12px;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;font-family:inherit;">บันทึก</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        async function saveEditQuestion() {
+            const id = document.getElementById('editQId').value;
+            const label = document.getElementById('editQLabel').value.trim();
+            const type = document.getElementById('editQType').value;
+            const optionsStr = document.getElementById('editQOptions').value.trim();
+            const isRequired = document.getElementById('editQRequired').checked;
+            const isActive = document.getElementById('editQActive').checked;
+            const sortOrder = parseInt(document.getElementById('editQOrder').value) || 0;
+            const msgEl = document.getElementById('editQMsg');
+
+            if (!label) {
+                msgEl.style.color = '#e74c3c';
+                msgEl.textContent = '✗ กรุณาระบุคำถาม';
+                return;
+            }
+
+            let options = null;
+            if ((type === 'radio' || type === 'checkbox') && optionsStr) {
+                options = optionsStr.split(',').map(s => s.trim()).filter(s => s);
+            }
+
+            try {
+                const res = await fetch(API + '/api/questions/' + id, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({ label, type, options, isRequired, isActive, sortOrder })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    document.getElementById('editQModal').remove();
+                    loadQuestions();
+                } else {
+                    msgEl.style.color = '#e74c3c';
+                    msgEl.textContent = '✗ ' + data.error;
+                }
+            } catch (e) {
+                msgEl.style.color = '#e74c3c';
+                msgEl.textContent = '✗ ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้';
             }
         }
     </script>
