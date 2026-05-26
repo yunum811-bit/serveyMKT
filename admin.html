@@ -909,19 +909,21 @@
             }
         }
 
+        let questionsData = []; // store for edit
+
         function renderQuestions(questions) {
+            questionsData = questions;
             const tbody = document.getElementById('questionsTable');
             if (questions.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#888;padding:20px;">ยังไม่มีคำถามเพิ่มเติม</td></tr>';
                 return;
             }
             const typeLabels = { text: 'ข้อความ', textarea: 'ข้อความยาว', radio: 'ตัวเลือกเดียว', checkbox: 'หลายตัวเลือก', number: 'ตัวเลข', date: 'วันที่' };
-            tbody.innerHTML = questions.map(q => {
+            tbody.innerHTML = questions.map((q, idx) => {
                 let opts = '';
                 if (q.options) {
                     try { opts = JSON.parse(q.options).join(', '); } catch(e) { opts = q.options; }
                 }
-                const qData = JSON.stringify(q).replace(/'/g, '&#39;').replace(/"/g, '&quot;');
                 return `<tr style="${!q.isActive ? 'opacity:0.5;' : ''}">
                     <td>${q.sortOrder}</td>
                     <td>${q.label}</td>
@@ -930,10 +932,10 @@
                     <td>${q.isRequired ? '✓' : '-'}</td>
                     <td>${q.isActive ? '<span style="color:#4caf50;">เปิดใช้</span>' : '<span style="color:#999;">ปิด</span>'}</td>
                     <td>
-                        <button class="btn-edit" onclick='editQuestion(${JSON.stringify(q)})'>✏️ แก้ไข</button>
+                        <button class="btn-edit" onclick="editQuestion(${idx})">✏️ แก้ไข</button>
                         ${q.isActive
-                            ? '<button class="btn-delete" onclick="deleteQuestion(' + q.id + ')">ลบ</button>'
-                            : '<button class="btn-add" style="padding:5px 12px;font-size:0.8rem;" onclick="restoreQuestion(' + q.id + ',\'' + q.label.replace(/'/g, "\\'") + '\',\'' + q.type + '\')">เปิดใช้</button>'
+                            ? ' <button class="btn-delete" onclick="deleteQuestion(' + q.id + ')">ลบ</button>'
+                            : ' <button class="btn-add" style="padding:5px 12px;font-size:0.8rem;" onclick="restoreQuestion(' + q.id + ',\'' + q.label.replace(/'/g, "\\'") + '\',\'' + q.type + '\')">เปิดใช้</button>'
                         }
                     </td>
                 </tr>`;
@@ -1008,7 +1010,9 @@
             }
         }
 
-        function editQuestion(q) {
+        function editQuestion(idx) {
+            const q = questionsData[idx];
+            if (!q) return;
             let modal = document.getElementById('editQModal');
             if (modal) modal.remove();
 
