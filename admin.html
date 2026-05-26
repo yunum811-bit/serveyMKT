@@ -1326,10 +1326,12 @@
             try {
                 const res = await fetch(API + '/api/user-form-config/' + userId, { headers: { 'Authorization': 'Bearer ' + token } });
                 currentUserConfig = await res.json();
-            } catch(e) { currentUserConfig = { hiddenFields: [], customOptions: {} }; }
+            } catch(e) { currentUserConfig = { hiddenFields: [], customOptions: {}, customLabels: {} }; }
 
             let modal = document.getElementById('formConfigModal');
             if (modal) modal.remove();
+
+            const labels = currentUserConfig.customLabels || {};
 
             modal = document.createElement('div');
             modal.id = 'formConfigModal';
@@ -1338,7 +1340,17 @@
                     <div style="background:#fff;border-radius:16px;padding:30px;max-width:600px;width:95%;max-height:90vh;overflow-y:auto;position:relative;">
                         <button onclick="document.getElementById('formConfigModal').remove()" style="position:absolute;top:12px;right:16px;background:none;border:none;font-size:1.5rem;cursor:pointer;color:#888;">✕</button>
                         <h3 style="margin-bottom:8px;color:#333;">⚙️ ตั้งค่าฟอร์มสำหรับ: ${fullName}</h3>
-                        <p style="font-size:0.85rem;color:#888;margin-bottom:16px;">กำหนดหัวข้อที่แสดง/ซ่อน และตัวเลือกเฉพาะ user นี้</p>
+
+                        <div style="border:1px solid #eee;border-radius:8px;padding:16px;margin-bottom:16px;">
+                            <h4 style="font-size:0.9rem;margin-bottom:10px;">🏷️ เปลี่ยนชื่อหัวข้อ (เฉพาะ user นี้)</h4>
+                            <p style="font-size:0.8rem;color:#888;margin-bottom:10px;">ถ้าไม่กรอก จะใช้ชื่อเดิม</p>
+                            ${allFormFields.map(f => `
+                                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                                    <span style="font-size:0.8rem;color:#888;width:140px;flex-shrink:0;">${f.label}:</span>
+                                    <input type="text" class="customLabelInput" data-key="${f.key}" value="${(labels[f.key] || '').replace(/"/g, '&quot;')}" placeholder="ชื่อเดิม" style="flex:1;padding:6px 10px;border:1px solid #ddd;border-radius:4px;font-family:inherit;font-size:0.85rem;">
+                                </div>
+                            `).join('')}
+                        </div>
 
                         <div style="border:1px solid #eee;border-radius:8px;padding:16px;margin-bottom:16px;">
                             <h4 style="font-size:0.9rem;margin-bottom:10px;">📋 ซ่อน/แสดงหัวข้อ</h4>
@@ -1354,7 +1366,7 @@
 
                         <div style="border:1px solid #eee;border-radius:8px;padding:16px;margin-bottom:16px;">
                             <h4 style="font-size:0.9rem;margin-bottom:10px;">📝 กำหนดตัวเลือกเฉพาะ user นี้</h4>
-                            <p style="font-size:0.8rem;color:#888;margin-bottom:10px;">ถ้าไม่กรอก จะใช้ตัวเลือกกลาง (default)</p>
+                            <p style="font-size:0.8rem;color:#888;margin-bottom:10px;">ถ้าไม่กรอก จะใช้ตัวเลือกกลาง</p>
                             <select id="userOptionFieldSelect" onchange="loadUserFieldOptions()" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;margin-bottom:10px;font-family:inherit;">
                                 <option value="">-- เลือกหัวข้อ --</option>
                                 <option value="officers">ชื่อผู้ปฏิบัติงาน</option>
@@ -1445,12 +1457,20 @@
             // Save current field options before submitting
             saveUserOptionToConfig();
 
+            // Collect custom labels
+            const customLabels = {};
+            document.querySelectorAll('.customLabelInput').forEach(input => {
+                if (input.value.trim()) {
+                    customLabels[input.dataset.key] = input.value.trim();
+                }
+            });
+
             const msgEl = document.getElementById('formConfigMsg');
             try {
                 const res = await fetch(API + '/api/user-form-config/' + currentEditUserId, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                    body: JSON.stringify({ hiddenFields, customOptions: currentUserConfig.customOptions || {} })
+                    body: JSON.stringify({ hiddenFields, customOptions: currentUserConfig.customOptions || {}, customLabels })
                 });
                 const data = await res.json();
                 if (res.ok) {

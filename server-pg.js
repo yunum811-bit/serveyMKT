@@ -432,27 +432,28 @@ app.put('/api/form-options/:key', authMiddleware, adminMiddleware, async (req, r
 app.get('/api/user-form-config/:userId', authMiddleware, async (req, res) => {
     try {
         const config = await queryOne('SELECT * FROM user_form_config WHERE "userId" = $1', [req.params.userId]);
-        res.json(config ? { hiddenFields: JSON.parse(config.hidden_fields), customOptions: JSON.parse(config.custom_options || '{}') } : { hiddenFields: [], customOptions: {} });
-    } catch (e) { res.json({ hiddenFields: [], customOptions: {} }); }
+        res.json(config ? { hiddenFields: JSON.parse(config.hidden_fields), customOptions: JSON.parse(config.custom_options || '{}'), customLabels: JSON.parse(config.custom_labels || '{}') } : { hiddenFields: [], customOptions: {}, customLabels: {} });
+    } catch (e) { res.json({ hiddenFields: [], customOptions: {}, customLabels: {} }); }
 });
 
 app.get('/api/user-form-config', authMiddleware, async (req, res) => {
     try {
         const config = await queryOne('SELECT * FROM user_form_config WHERE "userId" = $1', [req.user.id]);
-        res.json(config ? { hiddenFields: JSON.parse(config.hidden_fields), customOptions: JSON.parse(config.custom_options || '{}') } : { hiddenFields: [], customOptions: {} });
-    } catch (e) { res.json({ hiddenFields: [], customOptions: {} }); }
+        res.json(config ? { hiddenFields: JSON.parse(config.hidden_fields), customOptions: JSON.parse(config.custom_options || '{}'), customLabels: JSON.parse(config.custom_labels || '{}') } : { hiddenFields: [], customOptions: {}, customLabels: {} });
+    } catch (e) { res.json({ hiddenFields: [], customOptions: {}, customLabels: {} }); }
 });
 
 app.put('/api/user-form-config/:userId', authMiddleware, adminMiddleware, async (req, res) => {
     try {
-        const { hiddenFields, customOptions } = req.body;
+        const { hiddenFields, customOptions, customLabels } = req.body;
         const hf = JSON.stringify(hiddenFields || []);
         const co = JSON.stringify(customOptions || {});
+        const cl = JSON.stringify(customLabels || {});
         const existing = await queryOne('SELECT id FROM user_form_config WHERE "userId" = $1', [req.params.userId]);
         if (existing) {
-            await run('UPDATE user_form_config SET hidden_fields = $1, custom_options = $2 WHERE "userId" = $3', [hf, co, req.params.userId]);
+            await run('UPDATE user_form_config SET hidden_fields = $1, custom_options = $2, custom_labels = $3 WHERE "userId" = $4', [hf, co, cl, req.params.userId]);
         } else {
-            await insert('INSERT INTO user_form_config ("userId", hidden_fields, custom_options) VALUES ($1, $2, $3)', [req.params.userId, hf, co]);
+            await insert('INSERT INTO user_form_config ("userId", hidden_fields, custom_options, custom_labels) VALUES ($1, $2, $3, $4)', [req.params.userId, hf, co, cl]);
         }
         res.json({ message: 'บันทึกการตั้งค่าฟอร์มสำเร็จ' });
     } catch (e) { res.status(500).json({ error: e.message }); }

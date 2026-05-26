@@ -356,7 +356,7 @@ loadCustomQuestions();
 // Load editable form options from API
 loadFormOptions();
 
-// Load user form config (hide fields per user + custom options per user)
+// Load user form config (hide fields per user + custom options per user + custom labels)
 loadUserFormConfig();
 
 async function loadUserFormConfig() {
@@ -375,6 +375,25 @@ async function loadUserFormConfig() {
                     if (section) section.style.display = 'none';
                 });
             });
+        }
+
+        // Apply custom labels per user
+        if (data.customLabels && Object.keys(data.customLabels).length > 0) {
+            const fieldMap = { officer: 'officer', objective: 'objective', leadSource: 'leadSource', product: 'product', province: 'province', competitor: 'competitor', supervisor: 'supervisor', nextStep: 'nextStep', companyName: 'companyName', contactPerson: 'contactPerson', summary: 'summary', workDate: 'workDate', timeSlot: 'timeSlot', dealProbability: 'dealProbability', dealEstimate: 'dealEstimate', successRating: 'successRating' };
+            for (const [key, label] of Object.entries(data.customLabels)) {
+                const input = document.querySelector(`[name="${key}"]`);
+                if (input) {
+                    const section = input.closest('.section');
+                    if (section) {
+                        const titleEl = section.querySelector('.section-title');
+                        if (titleEl) {
+                            const req = titleEl.querySelector('.req');
+                            titleEl.textContent = label + ' ';
+                            if (req) titleEl.appendChild(req);
+                        }
+                    }
+                }
+            }
         }
 
         // Apply per-user custom options (overrides global form-options)

@@ -103,6 +103,7 @@ async function initDB() {
                 "userId" INTEGER NOT NULL,
                 hidden_fields TEXT DEFAULT '[]',
                 custom_options TEXT DEFAULT '{}',
+                custom_labels TEXT DEFAULT '{}',
                 UNIQUE("userId")
             );
         `);
@@ -115,7 +116,8 @@ async function initDB() {
             'ALTER TABLE reports ADD COLUMN IF NOT EXISTS "approvedByMd" TEXT',
             'ALTER TABLE reports ADD COLUMN IF NOT EXISTS "mgrComment" TEXT',
             'ALTER TABLE reports ADD COLUMN IF NOT EXISTS "mdComment" TEXT',
-            'ALTER TABLE user_form_config ADD COLUMN IF NOT EXISTS custom_options TEXT DEFAULT \'{}\''
+            'ALTER TABLE user_form_config ADD COLUMN IF NOT EXISTS custom_options TEXT DEFAULT \'{}\'',
+            'ALTER TABLE user_form_config ADD COLUMN IF NOT EXISTS custom_labels TEXT DEFAULT \'{}\''
         ];
         for (const sql of addCols) {
             try { await client.query(sql); } catch(e) { /* column may already exist */ }
