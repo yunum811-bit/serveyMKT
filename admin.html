@@ -305,8 +305,8 @@
             <!-- Tabs -->
             <div class="tabs">
                 <button class="tab-btn active" onclick="switchTab('reports')">📋 รายงานประจำเดือน</button>
-                <button class="tab-btn" onclick="switchTab('users')">👥 จัดการผู้ใช้</button>
-                <button class="tab-btn" onclick="switchTab('questions')">❓ จัดการคำถาม</button>
+                <button class="tab-btn admin-only-tab" onclick="switchTab('users')">👥 จัดการผู้ใช้</button>
+                <button class="tab-btn admin-only-tab" onclick="switchTab('questions')">❓ จัดการคำถาม</button>
             </div>
 
             <!-- Reports Tab -->
@@ -583,10 +583,15 @@
             document.getElementById('filterMonth').value = now.getMonth() + 1;
             document.getElementById('filterYear').value = now.getFullYear();
             loadReports();
-            if (currentUser.role === 'admin') {
+
+            // Hide admin tabs for non-admin users
+            if (['admin', 'md'].includes(currentUser.role)) {
+                document.querySelectorAll('.admin-only-tab').forEach(el => el.style.display = '');
                 loadUsers();
                 loadQuestions();
                 loadFormOptions();
+            } else {
+                document.querySelectorAll('.admin-only-tab').forEach(el => el.style.display = 'none');
             }
         }
 
