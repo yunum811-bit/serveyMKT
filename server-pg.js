@@ -165,14 +165,25 @@ app.delete('/api/users/:id', authMiddleware, adminMiddleware, async (req, res) =
 });
 
 // === REPORT ROUTES ===
-app.post('/api/reports', authMiddleware, upload.fields([{ name: 'photo1', maxCount: 1 }, { name: 'photo2', maxCount: 1 }]), async (req, res) => {
+app.post('/api/reports', authMiddleware, (req, res, next) => {
+    upload.fields([{ name: 'photo1', maxCount: 1 }, { name: 'photo2', maxCount: 1 }])(req, res, (err) => {
+        if (err) {
+            console.error('Upload error:', err);
+            return res.status(400).json({ error: 'อัปโหลดไฟล์ไม่สำเร็จ: ' + err.message });
+        }
+        next();
+    });
+}, async (req, res) => {
     try {
         const b = req.body;
         // Get photo URL (Cloudinary returns path, local returns filename)
         const photo1 = req.files?.photo1?.[0]?.path || req.files?.photo1?.[0]?.filename || null;
         const photo2 = req.files?.photo2?.[0]?.path || req.files?.photo2?.[0]?.filename || null;
 
+        console.log('Report submit by user:', req.user.id, '| Photos:', photo1 ? 'yes' : 'no', photo2 ? 'yes' : 'no');
+
         if (!b.officer || !b.workDate || !b.timeSlot || !b.companyName || !b.contactPerson || !b.summary || !b.province || !b.supervisor) {
+            console.log('Missing fields:', { officer: !!b.officer, workDate: !!b.workDate, timeSlot: !!b.timeSlot, companyName: !!b.companyName, contactPerson: !!b.contactPerson, summary: !!b.summary, province: !!b.province, supervisor: !!b.supervisor });
             return res.status(400).json({ error: 'กรุณากรอกข้อมูลที่จำเป็นให้ครบ' });
         }
 

@@ -176,7 +176,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 headers: token ? { 'Authorization': 'Bearer ' + token } : {},
                 body: formData
             })
-            .then(res => res.json())
+            .then(res => {
+                if (!res.ok) {
+                    return res.json().then(d => { throw new Error(d.error || 'Server error: ' + res.status); });
+                }
+                return res.json();
+            })
             .then(data => {
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'ส่งแบบฟอร์ม';
@@ -191,7 +196,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(err => {
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'ส่งแบบฟอร์ม';
-                alert('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่');
+                alert('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้: ' + err.message + '\n\nกรุณาลองใหม่อีกครั้ง');
                 console.error(err);
             });
         } else {
