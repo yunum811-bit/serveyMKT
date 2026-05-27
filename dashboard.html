@@ -167,6 +167,12 @@
                 <select id="filterYear">
                     <option value="2026">2026</option><option value="2025">2025</option>
                 </select>
+                <span id="officerFilterWrap" style="display:none;">
+                    <label>เจ้าหน้าที่:</label>
+                    <select id="filterOfficer">
+                        <option value="">ทุกคน (รวม)</option>
+                    </select>
+                </span>
                 <button class="btn-filter" onclick="loadDashboard()">🔍 ดูข้อมูล</button>
             </div>
 
@@ -271,18 +277,40 @@
             document.getElementById('mainApp').classList.remove('hidden');
             document.getElementById('welcomeName').textContent = 'สวัสดี, ' + currentUser.fullName;
             document.getElementById('currentUser').textContent = currentUser.fullName;
-            if (currentUser.role === 'admin') document.getElementById('adminLink').style.display = 'inline-block';
+            if (['admin', 'md'].includes(currentUser.role)) {
+                document.getElementById('adminLink').style.display = 'inline-block';
+                // Show officer filter for MD/admin
+                document.getElementById('officerFilterWrap').style.display = 'inline';
+                loadOfficerList();
+            }
             const now = new Date();
             document.getElementById('filterMonth').value = now.getMonth() + 1;
             document.getElementById('filterYear').value = now.getFullYear();
             loadDashboard();
         }
 
+        async function loadOfficerList() {
+            try {
+                const res = await fetch('/api/reports?year=2026', { headers: { 'Authorization': 'Bearer ' + token } });
+                const reports = await res.json();
+                const officers = [...new Set(reports.map(r => r.officer))].sort();
+                const select = document.getElementById('filterOfficer');
+                officers.forEach(name => {
+                    const opt = document.createElement('option');
+                    opt.value = name;
+                    opt.textContent = name;
+                    select.appendChild(opt);
+                });
+            } catch(e) {}
+        }
+
         async function loadDashboard() {
             const month = document.getElementById('filterMonth').value;
             const year = document.getElementById('filterYear').value;
+            const officer = document.getElementById('filterOfficer') ? document.getElementById('filterOfficer').value : '';
             let url = '/api/reports?year=' + year;
             if (month) url += '&month=' + month;
+            if (officer) url += '&officer=' + encodeURIComponent(officer);
 
             try {
                 const res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + token } });
