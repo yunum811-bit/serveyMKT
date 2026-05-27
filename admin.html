@@ -585,7 +585,7 @@
             loadReports();
 
             // Hide admin tabs for non-admin users
-            if (['admin', 'md'].includes(currentUser.role)) {
+            if (currentUser.role === 'admin') {
                 document.querySelectorAll('.admin-only-tab').forEach(el => el.style.display = '');
                 loadUsers();
                 loadQuestions();
