@@ -363,6 +363,17 @@ async function loadUserFormConfig() {
     const token = localStorage.getItem('token');
     if (!token) return;
     try {
+        // Get user info for role-based supervisor
+        const meRes = await fetch('/api/auth/me', { headers: { 'Authorization': 'Bearer ' + token } });
+        const me = await meRes.json();
+
+        // Set supervisor based on role
+        if (me.role === 'user') {
+            updateRadioGroup('supervisor', ['นางสาว มนัสสนันท์ ตลับเพชร'], false);
+        } else if (me.role === 'mgr') {
+            updateRadioGroup('supervisor', ['นาย ธีรวัฒน์ ขำเมือง'], false);
+        }
+
         const res = await fetch('/api/user-form-config', { headers: { 'Authorization': 'Bearer ' + token } });
         const data = await res.json();
 
