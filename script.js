@@ -353,11 +353,8 @@ function loadCustomQuestions() {
 // Load custom questions on page load
 loadCustomQuestions();
 
-// Load editable form options from API
-loadFormOptions();
-
-// Load user form config (hide fields per user + custom options per user + custom labels)
-loadUserFormConfig();
+// Load form options then user config (user config overrides global)
+loadFormOptions().then(() => loadUserFormConfig());
 
 async function loadUserFormConfig() {
     const token = localStorage.getItem('token');
@@ -366,13 +363,6 @@ async function loadUserFormConfig() {
         // Get user info for role-based supervisor
         const meRes = await fetch('/api/auth/me', { headers: { 'Authorization': 'Bearer ' + token } });
         const me = await meRes.json();
-
-        // Set supervisor based on role
-        if (me.role === 'user') {
-            updateRadioGroup('supervisor', ['นางสาว มนัสสนันท์ ตลับเพชร'], false);
-        } else if (me.role === 'mgr') {
-            updateRadioGroup('supervisor', ['นาย ธีรวัฒน์ ขำเมือง'], false);
-        }
 
         const res = await fetch('/api/user-form-config', { headers: { 'Authorization': 'Bearer ' + token } });
         const data = await res.json();
@@ -390,7 +380,6 @@ async function loadUserFormConfig() {
 
         // Apply custom labels per user
         if (data.customLabels && Object.keys(data.customLabels).length > 0) {
-            const fieldMap = { officer: 'officer', objective: 'objective', leadSource: 'leadSource', product: 'product', province: 'province', competitor: 'competitor', supervisor: 'supervisor', nextStep: 'nextStep', companyName: 'companyName', contactPerson: 'contactPerson', summary: 'summary', workDate: 'workDate', timeSlot: 'timeSlot', dealProbability: 'dealProbability', dealEstimate: 'dealEstimate', successRating: 'successRating' };
             for (const [key, label] of Object.entries(data.customLabels)) {
                 const input = document.querySelector(`[name="${key}"]`);
                 if (input) {
@@ -422,6 +411,15 @@ async function loadUserFormConfig() {
                 } else {
                     updateCheckboxGroup(name, options, hasOther);
                 }
+            }
+        }
+
+        // Set supervisor based on role (LAST - always overrides)
+        if (!data.customOptions || !data.customOptions.supervisors) {
+            if (me.role === 'user') {
+                updateRadioGroup('supervisor', ['นางสาว มนัสสนันท์ ตลับเพชร'], false);
+            } else if (me.role === 'mgr') {
+                updateRadioGroup('supervisor', ['นาย ธีรวัฒน์ ขำเมือง'], false);
             }
         }
     } catch(e) { /* use defaults */ }
