@@ -82,13 +82,15 @@ function mgrMiddleware(req, res, next) {
 // === AUTH ROUTES ===
 app.post('/api/auth/register', async (req, res) => {
     try {
-        const { username, password, fullName } = req.body;
+        const { username, password, fullName, role } = req.body;
         if (!username || !password || !fullName) return res.status(400).json({ error: 'กรุณากรอกข้อมูลให้ครบ' });
         if (password.length < 4) return res.status(400).json({ error: 'รหัสผ่านต้องมีอย่างน้อย 4 ตัวอักษร' });
         const existing = await queryOne('SELECT id FROM users WHERE username = $1', [username]);
         if (existing) return res.status(400).json({ error: 'ชื่อผู้ใช้นี้มีอยู่แล้ว' });
         const hashedPw = bcrypt.hashSync(password, 10);
-        const user = await insert('INSERT INTO users (username, password, "fullName") VALUES ($1, $2, $3)', [username, hashedPw, fullName]);
+        const validRoles = ['user', 'mgr', 'md', 'admin'];
+        const userRole = validRoles.includes(role) ? role : 'user';
+        const user = await insert('INSERT INTO users (username, password, "fullName", role) VALUES ($1, $2, $3, $4)', [username, hashedPw, fullName, userRole]);
         res.json({ message: 'สร้างบัญชีสำเร็จ', userId: user.id });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });

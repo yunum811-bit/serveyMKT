@@ -393,6 +393,12 @@
                         <input type="text" id="newUsername" placeholder="ชื่อผู้ใช้ (username)">
                         <input type="password" id="newPassword" placeholder="รหัสผ่าน">
                         <input type="text" id="newFullName" placeholder="ชื่อ-นามสกุล">
+                        <select id="newRole" style="padding:10px;border:2px solid #e0e0e0;border-radius:8px;font-family:inherit;">
+                            <option value="user">พนักงาน (user)</option>
+                            <option value="mgr">ผู้จัดการ (MGR)</option>
+                            <option value="md">MD</option>
+                            <option value="admin">Admin</option>
+                        </select>
                         <button class="btn-add" onclick="addUser()">เพิ่มผู้ใช้</button>
                     </div>
                     <p id="userMsg" style="font-size:0.85rem; margin-top:8px;"></p>
@@ -821,13 +827,14 @@
             const username = document.getElementById('newUsername').value;
             const password = document.getElementById('newPassword').value;
             const fullName = document.getElementById('newFullName').value;
+            const role = document.getElementById('newRole').value;
             const msgEl = document.getElementById('userMsg');
 
             try {
                 const res = await fetch(API + '/api/auth/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                    body: JSON.stringify({ username, password, fullName })
+                    body: JSON.stringify({ username, password, fullName, role })
                 });
                 const data = await res.json();
                 if (res.ok) {
@@ -836,6 +843,7 @@
                     document.getElementById('newUsername').value = '';
                     document.getElementById('newPassword').value = '';
                     document.getElementById('newFullName').value = '';
+                    document.getElementById('newRole').value = 'user';
                     loadUsers();
                 } else {
                     msgEl.style.color = '#e74c3c';
