@@ -281,6 +281,8 @@ app.get('/api/reports/summary', authMiddleware, async (req, res) => {
 app.get('/api/reports/export/excel', authMiddleware, async (req, res) => {
     try {
         const ExcelJS = require('exceljs');
+        const https = require('https');
+        const http = require('http');
         const { month, year, officer } = req.query;
         let where = 'WHERE 1=1';
         const params = [];
@@ -306,15 +308,62 @@ app.get('/api/reports/export/excel', authMiddleware, async (req, res) => {
             { header: 'Next Step', key: 'nextSteps', width: 20 }, { header: 'ระดับดีล', key: 'dealProbability', width: 16 },
             { header: 'มูลค่าดีล', key: 'dealValue', width: 14 }, { header: 'คะแนน', key: 'successRating', width: 8 },
             { header: 'คู่แข่ง', key: 'competitors', width: 18 }, { header: 'พื้นที่', key: 'province', width: 14 },
-            { header: 'ผู้ตรวจสอบ', key: 'supervisor', width: 22 }, { header: 'ภาพ 1 (URL)', key: 'photo1url', width: 30 },
-            { header: 'ภาพ 2 (URL)', key: 'photo2url', width: 30 }, { header: 'วันที่บันทึก', key: 'createdAt', width: 18 }
+            { header: 'ผู้ตรวจสอบ', key: 'supervisor', width: 22 },
+            { header: 'ภาพ 1', key: 'photo1col', width: 22 },
+            { header: 'ภาพ 2', key: 'photo2col', width: 22 },
+            { header: 'วันที่บันทึก', key: 'createdAt', width: 18 }
         ];
         sheet.getRow(1).eachCell(cell => { cell.style = headerStyle; });
+        sheet.getRow(1).height = 20;
 
-        reports.forEach((r, i) => {
-            const row = sheet.addRow({ no: i+1, workDate: r.workDate, officer: r.officer, timeSlot: r.timeSlot, objectives: r.objectives, leadSource: r.leadSource||'', products: r.products||'', companyName: r.companyName, contactPerson: r.contactPerson, summary: r.summary, nextSteps: r.nextSteps||'', dealProbability: r.dealProbability||'', dealValue: r.dealValue||'', successRating: r.successRating||'', competitors: r.competitors||'', province: r.province, supervisor: r.supervisor, photo1url: r.photo1||'-', photo2url: r.photo2||'-', createdAt: r.createdAt ? new Date(r.createdAt).toLocaleString('th-TH') : '' });
+        // Helper: download image as buffer
+        function downloadImage(url) {
+            return new Promise((resolve) => {
+                const client = url.startsWith('https') ? https : http;
+                client.get(url, (response) => {
+                    const chunks = [];
+                    response.on('data', chunk => chunks.push(chunk));
+                    response.on('end', () => resolve(Buffer.concat(chunks)));
+                    response.on('error', () => resolve(null));
+                }).on('error', () => resolve(null));
+            });
+        }
+
+        // Add rows with images
+        for (let i = 0; i < reports.length; i++) {
+            const r = reports[i];
+            const rowNum = i + 2;
+            const row = sheet.addRow({ no: i+1, workDate: r.workDate, officer: r.officer, timeSlot: r.timeSlot, objectives: r.objectives, leadSource: r.leadSource||'', products: r.products||'', companyName: r.companyName, contactPerson: r.contactPerson, summary: r.summary, nextSteps: r.nextSteps||'', dealProbability: r.dealProbability||'', dealValue: r.dealValue||'', successRating: r.successRating||'', competitors: r.competitors||'', province: r.province, supervisor: r.supervisor, photo1col: '', photo2col: '', createdAt: r.createdAt ? new Date(r.createdAt).toLocaleString('th-TH') : '' });
             row.eachCell(cell => { cell.border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } }; cell.alignment = { vertical: 'top', wrapText: true }; });
-        });
+
+            let hasImage = false;
+
+            // Embed photo1
+            if (r.photo1 && r.photo1.startsWith('http')) {
+                try {
+                    const imgBuffer = await downloadImage(r.photo1);
+                    if (imgBuffer && imgBuffer.length > 100) {
+                        const imgId = workbook.addImage({ buffer: imgBuffer, extension: 'png' });
+                        sheet.addImage(imgId, { tl: { col: 17, row: rowNum - 1 }, ext: { width: 130, height: 100 } });
+                        hasImage = true;
+                    }
+                } catch(e) { /* skip */ }
+            }
+
+            // Embed photo2
+            if (r.photo2 && r.photo2.startsWith('http')) {
+                try {
+                    const imgBuffer = await downloadImage(r.photo2);
+                    if (imgBuffer && imgBuffer.length > 100) {
+                        const imgId = workbook.addImage({ buffer: imgBuffer, extension: 'png' });
+                        sheet.addImage(imgId, { tl: { col: 18, row: rowNum - 1 }, ext: { width: 130, height: 100 } });
+                        hasImage = true;
+                    }
+                } catch(e) { /* skip */ }
+            }
+
+            if (hasImage) row.height = 80;
+        }
 
         const monthNames = ['','มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
         const filename = `report_${year||'all'}${month ? '_'+monthNames[parseInt(month)] : ''}.xlsx`;
@@ -322,7 +371,7 @@ app.get('/api/reports/export/excel', authMiddleware, async (req, res) => {
         res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
         await workbook.xlsx.write(res);
         res.end();
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('Excel export error:', e); res.status(500).json({ error: e.message }); }
 });
 
 app.get('/api/reports/:id', authMiddleware, async (req, res) => {
