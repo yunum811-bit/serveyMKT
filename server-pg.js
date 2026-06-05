@@ -25,6 +25,7 @@ if (process.env.CLOUDINARY_CLOUD_NAME) {
     // Cloudinary upload (production)
     const cloudinary = require('cloudinary').v2;
     const { CloudinaryStorage } = require('multer-storage-cloudinary');
+    console.log('Cloudinary config:', { cloud_name: process.env.CLOUDINARY_CLOUD_NAME, api_key: process.env.CLOUDINARY_API_KEY ? process.env.CLOUDINARY_API_KEY.substring(0,6) + '...' : 'MISSING' });
     cloudinary.config({
         cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
         api_key: process.env.CLOUDINARY_API_KEY,
