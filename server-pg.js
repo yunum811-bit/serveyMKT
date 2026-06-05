@@ -21,16 +21,23 @@ app.use(express.static(path.join(__dirname)));
 // === File Upload Config ===
 let upload;
 
-if (process.env.CLOUDINARY_CLOUD_NAME) {
+if (process.env.CLOUDINARY_CLOUD_NAME || process.env.CLOUDINARY_URL) {
     // Cloudinary upload (production)
     const cloudinary = require('cloudinary').v2;
     const { CloudinaryStorage } = require('multer-storage-cloudinary');
-    console.log('Cloudinary config:', { cloud_name: process.env.CLOUDINARY_CLOUD_NAME, api_key: process.env.CLOUDINARY_API_KEY ? process.env.CLOUDINARY_API_KEY.substring(0,6) + '...' : 'MISSING' });
-    cloudinary.config({
-        cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-        api_key: process.env.CLOUDINARY_API_KEY,
-        api_secret: process.env.CLOUDINARY_API_SECRET
-    });
+    
+    // Try CLOUDINARY_URL first, then individual vars
+    if (process.env.CLOUDINARY_URL) {
+        // CLOUDINARY_URL format: cloudinary://api_key:api_secret@cloud_name
+        console.log('Using CLOUDINARY_URL');
+    } else {
+        cloudinary.config({
+            cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+            api_key: process.env.CLOUDINARY_API_KEY,
+            api_secret: process.env.CLOUDINARY_API_SECRET
+        });
+    }
+    console.log('Cloudinary config:', { cloud_name: cloudinary.config().cloud_name, api_key: cloudinary.config().api_key ? cloudinary.config().api_key.substring(0,6) + '...' : 'MISSING' });
     const storage = new CloudinaryStorage({
         cloudinary,
         params: { folder: 'marketing-sc', allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp'] }
