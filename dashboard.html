@@ -270,7 +270,7 @@
             } catch(e) { errEl.textContent = 'ไม่สามารถเชื่อมต่อได้'; errEl.classList.remove('hidden'); }
         }
 
-        function logout() { localStorage.removeItem('token'); location.reload(); }
+        function logout() { localStorage.removeItem('token'); window.location.href = '/'; }
 
         function showApp() {
             document.getElementById('loginOverlay').classList.add('hidden');

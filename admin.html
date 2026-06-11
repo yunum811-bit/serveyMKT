@@ -571,9 +571,7 @@
 
         function logout() {
             localStorage.removeItem('token');
-            token = null;
-            currentUser = null;
-            showLogin();
+            window.location.href = '/';
         }
 
         function showLogin() {
