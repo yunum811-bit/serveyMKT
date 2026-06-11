@@ -378,6 +378,7 @@
                                 <th>ระดับดีล</th>
                                 <th>สถานะ</th>
                                 <th>คะแนน</th>
+                                <th>จัดการ</th>
                             </tr>
                         </thead>
                         <tbody id="reportsTable"></tbody>
@@ -634,10 +635,11 @@
         function renderReports(reports) {
             const tbody = document.getElementById('reportsTable');
             if (reports.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#888;padding:30px;">ไม่พบข้อมูลรายงาน</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#888;padding:30px;">ไม่พบข้อมูลรายงาน</td></tr>';
                 return;
             }
             const statusBadge = { pending: '<span style="background:#fff3e0;color:#f57c00;padding:2px 8px;border-radius:10px;font-size:0.75rem;">รอตรวจ</span>', mgr_approved: '<span style="background:#e3f2fd;color:#1976d2;padding:2px 8px;border-radius:10px;font-size:0.75rem;">รอ MD</span>', approved: '<span style="background:#e8f5e9;color:#388e3c;padding:2px 8px;border-radius:10px;font-size:0.75rem;">อนุมัติ</span>', rejected: '<span style="background:#fce4ec;color:#c62828;padding:2px 8px;border-radius:10px;font-size:0.75rem;">ไม่อนุมัติ</span>' };
+            const isAdmin = currentUser && currentUser.role === 'admin';
             tbody.innerHTML = reports.map(r => {
                 let badge = '';
                 if (r.dealProbability) {
@@ -645,16 +647,34 @@
                     else if (r.dealProbability.includes('ปานกลาง')) badge = '<span class="badge-warm">Warm</span>';
                     else badge = '<span class="badge-cold">Cold</span>';
                 }
-                return `<tr style="cursor:pointer;" onclick="viewReport(${r.id})">
-                    <td>${r.workDate}</td>
-                    <td>${r.officer}</td>
-                    <td>${r.companyName}</td>
-                    <td>${r.objectives ? r.objectives.substring(0, 30) + (r.objectives.length > 30 ? '...' : '') : '-'}</td>
+                return `<tr>
+                    <td style="cursor:pointer;" onclick="viewReport(${r.id})">${r.workDate}</td>
+                    <td style="cursor:pointer;" onclick="viewReport(${r.id})">${r.officer}</td>
+                    <td style="cursor:pointer;" onclick="viewReport(${r.id})">${r.companyName}</td>
+                    <td style="cursor:pointer;" onclick="viewReport(${r.id})">${r.objectives ? r.objectives.substring(0, 30) + (r.objectives.length > 30 ? '...' : '') : '-'}</td>
                     <td>${badge || '-'}</td>
                     <td>${statusBadge[r.status || 'pending']}</td>
                     <td>${r.successRating || '-'}/5</td>
+                    <td>${isAdmin ? '<button class="btn-delete" onclick="deleteReport('+r.id+',event)">🗑️ ลบ</button>' : ''}</td>
                 </tr>`;
             }).join('');
+        }
+
+        async function deleteReport(id, event) {
+            event.stopPropagation();
+            if (!confirm('ต้องการลบรายงานนี้หรือไม่? (ลบแล้วกู้คืนไม่ได้)')) return;
+            try {
+                const res = await fetch(API + '/api/reports/' + id, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    loadReports();
+                } else {
+                    alert('ลบไม่สำเร็จ: ' + data.error);
+                }
+            } catch(e) { alert('เกิดข้อผิดพลาด'); }
         }
 
         async function viewReport(id) {
