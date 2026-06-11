@@ -76,13 +76,36 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // === File upload display ===
+    // === File upload display (show preview) ===
     document.getElementById('photo1').addEventListener('change', function() {
-        document.getElementById('fileName1').textContent = this.files[0] ? this.files[0].name : '';
+        showImagePreview(this, 'fileUpload1', 'fileName1');
     });
     document.getElementById('photo2').addEventListener('change', function() {
-        document.getElementById('fileName2').textContent = this.files[0] ? this.files[0].name : '';
+        showImagePreview(this, 'fileUpload2', 'fileName2');
     });
+
+    function showImagePreview(input, uploadId, nameId) {
+        const container = document.getElementById(uploadId);
+        const nameEl = document.getElementById(nameId);
+        // Remove old preview
+        const oldPreview = container.querySelector('.upload-preview');
+        if (oldPreview) oldPreview.remove();
+
+        if (input.files && input.files[0]) {
+            nameEl.textContent = input.files[0].name;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.createElement('img');
+                preview.src = e.target.result;
+                preview.className = 'upload-preview';
+                preview.style.cssText = 'max-width:100%;max-height:200px;border-radius:8px;margin-top:10px;object-fit:contain;';
+                container.appendChild(preview);
+            };
+            reader.readAsDataURL(input.files[0]);
+        } else {
+            nameEl.textContent = '';
+        }
+    }
 
     // === Form submission ===
     form.addEventListener('submit', function(e) {
