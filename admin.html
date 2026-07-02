@@ -689,6 +689,10 @@
                 const status = r.status || 'pending';
 
                 let approvalButtons = '';
+                // Edit button for owner (pending or rejected)
+                if (currentUser.id === r.userId && ['pending','rejected'].includes(status)) {
+                    approvalButtons += `<div style="margin-top:12px;"><button onclick="editReport(${r.id})" style="width:100%;background:#ff9800;color:#fff;border:none;padding:10px;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:500;">✏️ แก้ไขรายงานนี้</button></div>`;
+                }
                 if (currentUser.role === 'mgr' && status === 'pending') {
                     approvalButtons = `<div style="margin-top:16px;display:flex;gap:8px;">
                         <button onclick="approveReport(${r.id},'mgr')" style="flex:1;background:#4caf50;color:#fff;border:none;padding:10px;border-radius:8px;cursor:pointer;font-family:inherit;">✅ MGR อนุมัติ</button>
@@ -778,6 +782,10 @@
                 if (modal) modal.remove();
                 loadReports();
             } catch(e) { alert('เกิดข้อผิดพลาด'); }
+        }
+
+        function editReport(id) {
+            window.location.href = '/?edit=' + id;
         }
 
         function showDetailModal(title, content) {

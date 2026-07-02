@@ -383,6 +383,56 @@ app.get('/api/reports/:id', authMiddleware, async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// Edit report (owner can edit if status is pending or rejected)
+app.put('/api/reports/:id', authMiddleware, (req, res, next) => {
+    upload.fields([{ name: 'photo1', maxCount: 1 }, { name: 'photo2', maxCount: 1 }])(req, res, (err) => {
+        if (err) return res.status(400).json({ error: 'อัปโหลดไฟล์ไม่สำเร็จ: ' + err.message });
+        next();
+    });
+}, async (req, res) => {
+    try {
+        const report = await queryOne('SELECT * FROM reports WHERE id = $1', [req.params.id]);
+        if (!report) return res.status(404).json({ error: 'ไม่พบรายงาน' });
+
+        // Only owner can edit, and only if pending or rejected
+        if (report.userId !== req.user.id && req.user.role === 'user') {
+            return res.status(403).json({ error: 'ไม่มีสิทธิ์แก้ไข' });
+        }
+        if (req.user.role === 'user' && !['pending', 'rejected'].includes(report.status || 'pending')) {
+            return res.status(400).json({ error: 'ไม่สามารถแก้ไขได้ เนื่องจากรายงานถูกอนุมัติแล้ว' });
+        }
+
+        const b = req.body;
+        const photo1 = req.files?.photo1?.[0]?.path || req.files?.photo1?.[0]?.filename || report.photo1;
+        const photo2 = req.files?.photo2?.[0]?.path || req.files?.photo2?.[0]?.filename || report.photo2;
+
+        const objectives = Array.isArray(b.objective) ? b.objective.join(', ') : (b.objective || report.objectives);
+        const products = Array.isArray(b.product) ? b.product.join(', ') : (b.product || report.products);
+        const nextSteps = Array.isArray(b.nextStep) ? b.nextStep.join(', ') : (b.nextStep || report.nextSteps);
+        const competitors = Array.isArray(b.competitor) ? b.competitor.join(', ') : (b.competitor || report.competitors);
+
+        await run(`UPDATE reports SET 
+            officer=$1, "workDate"=$2, "timeSlot"=$3, "startTime"=$4, "endTime"=$5,
+            objectives=$6, "objectiveOther"=$7, "leadSource"=$8, "leadSourceOther"=$9,
+            products=$10, "productOther"=$11, "companyName"=$12, "contactPerson"=$13, summary=$14,
+            "nextSteps"=$15, "nextStepOther"=$16, "proposalDate"=$17, "meetingDate"=$18,
+            "dealProbability"=$19, photo1=$20, "photoDesc1"=$21, photo2=$22, "photoDesc2"=$23,
+            province=$24, "provinceOther"=$25, "dealEstimate"=$26, "dealValue"=$27,
+            "successRating"=$28, competitors=$29, "competitorOther"=$30, supervisor=$31, status='pending'
+            WHERE id=$32`,
+            [b.officer||report.officer, b.workDate||report.workDate, b.timeSlot||report.timeSlot, b.startTime||report.startTime, b.endTime||report.endTime,
+             objectives, b.objectiveOtherText||report.objectiveOther, b.leadSource||report.leadSource, b.leadSourceOtherText||report.leadSourceOther,
+             products, b.productOtherText||report.productOther, b.companyName||report.companyName, b.contactPerson||report.contactPerson, b.summary||report.summary,
+             nextSteps, b.nextStepOtherText||report.nextStepOther, b.proposalDate||report.proposalDate, b.meetingDate||report.meetingDate,
+             b.dealProbability||report.dealProbability, photo1, b.photoDesc1||report.photoDesc1, photo2, b.photoDesc2||report.photoDesc2,
+             b.province||report.province, b.provinceOtherText||report.provinceOther, b.dealEstimate||report.dealEstimate, b.dealValue||report.dealValue,
+             b.successRating ? parseInt(b.successRating) : report.successRating, competitors, b.competitorOtherText||report.competitorOther, b.supervisor||report.supervisor,
+             req.params.id]
+        );
+        res.json({ message: 'แก้ไขรายงานสำเร็จ' });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.delete('/api/reports/:id', authMiddleware, mdMiddleware, async (req, res) => {
     try { await run('DELETE FROM reports WHERE id = $1', [req.params.id]); res.json({ message: 'ลบรายงานสำเร็จ' }); }
     catch (e) { res.status(500).json({ error: e.message }); }

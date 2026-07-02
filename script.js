@@ -543,3 +543,130 @@ function updateCheckboxGroup(name, options, hasOther, label) {
         }
     }
 }
+
+// === Edit Mode ===
+(function() {
+    const params = new URLSearchParams(window.location.search);
+    const editId = params.get('edit');
+    if (!editId) return;
+
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    // Wait for form to be visible
+    const checkReady = setInterval(() => {
+        const form = document.getElementById('surveyForm');
+        const container = document.getElementById('formContainer');
+        if (!form || !container || container.style.display === 'none') return;
+        clearInterval(checkReady);
+
+        // Change button text
+        const submitBtn = form.querySelector('.submit-btn');
+        if (submitBtn) submitBtn.textContent = '💾 บันทึกการแก้ไข';
+
+        // Show edit banner
+        const banner = document.createElement('div');
+        banner.style.cssText = 'background:#fff3e0;border:1px solid #ff9800;border-radius:8px;padding:12px 16px;margin-bottom:16px;color:#e65100;font-weight:500;';
+        banner.textContent = '✏️ โหมดแก้ไข — กำลังแก้ไขรายงาน #' + editId;
+        container.querySelector('.header').after(banner);
+
+        // Load existing data
+        fetch('/api/reports/' + editId, { headers: { 'Authorization': 'Bearer ' + token } })
+            .then(r => r.json())
+            .then(report => {
+                if (!report || report.error) { alert('ไม่สามารถโหลดรายงานได้'); return; }
+
+                // Fill text fields
+                const textFields = { workDate: 'workDate', companyName: 'companyName', contactPerson: 'contactPerson', summary: 'summary' };
+                for (const [key, name] of Object.entries(textFields)) {
+                    const el = form.querySelector(`[name="${name}"]`);
+                    if (el && report[key]) el.value = report[key];
+                }
+
+                // Fill radio fields
+                ['officer', 'timeSlot', 'province', 'supervisor', 'leadSource', 'dealProbability', 'dealEstimate', 'successRating'].forEach(name => {
+                    const val = report[name] || report[name.replace(/([A-Z])/g, m => m)];
+                    if (val) {
+                        const radio = form.querySelector(`input[name="${name}"][value="${val}"]`);
+                        if (radio) radio.checked = true;
+                    }
+                });
+
+                // Fill checkboxes (objectives, products, competitors, nextSteps)
+                const checkboxFields = { objective: 'objectives', product: 'products', competitor: 'competitors', nextStep: 'nextSteps' };
+                for (const [name, key] of Object.entries(checkboxFields)) {
+                    if (report[key]) {
+                        report[key].split(', ').forEach(val => {
+                            const cb = form.querySelector(`input[name="${name}"][value="${val}"]`);
+                            if (cb) cb.checked = true;
+                        });
+                    }
+                }
+
+                // Show existing photos
+                if (report.photo1 && report.photo1.startsWith('http')) {
+                    const container1 = document.getElementById('fileUpload1');
+                    const img = document.createElement('img');
+                    img.src = report.photo1;
+                    img.className = 'upload-preview';
+                    img.style.cssText = 'max-width:100%;max-height:150px;border-radius:8px;margin-top:10px;object-fit:contain;';
+                    container1.appendChild(img);
+                    // Make photo not required in edit mode
+                    document.getElementById('photo1').removeAttribute('required');
+                }
+                if (report.photo2 && report.photo2.startsWith('http')) {
+                    const container2 = document.getElementById('fileUpload2');
+                    const img = document.createElement('img');
+                    img.src = report.photo2;
+                    img.className = 'upload-preview';
+                    img.style.cssText = 'max-width:100%;max-height:150px;border-radius:8px;margin-top:10px;object-fit:contain;';
+                    container2.appendChild(img);
+                    document.getElementById('photo2').removeAttribute('required');
+                }
+            })
+            .catch(e => console.error('Failed to load report for edit:', e));
+
+        // Override form submit for edit mode
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+
+            const formData = new FormData(form);
+            // Combine time
+            const startH = form.querySelector('[name="startTimeHour"]').value;
+            const startM = form.querySelector('[name="startTimeMin"]').value;
+            const endH = form.querySelector('[name="endTimeHour"]').value;
+            const endM = form.querySelector('[name="endTimeMin"]').value;
+            if (startH && startM) formData.set('startTime', startH + ':' + startM);
+            if (endH && endM) formData.set('endTime', endH + ':' + endM);
+            formData.delete('startTimeHour'); formData.delete('startTimeMin');
+            formData.delete('endTimeHour'); formData.delete('endTimeMin');
+
+            const submitBtn = form.querySelector('.submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'กำลังบันทึก...';
+
+            fetch('/api/reports/' + editId, {
+                method: 'PUT',
+                headers: { 'Authorization': 'Bearer ' + token },
+                body: formData
+            })
+            .then(r => r.json())
+            .then(data => {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '💾 บันทึกการแก้ไข';
+                if (data.message) {
+                    alert('✓ ' + data.message);
+                    window.location.href = '/admin.html';
+                } else {
+                    alert('✗ ' + (data.error || 'เกิดข้อผิดพลาด'));
+                }
+            })
+            .catch(err => {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '💾 บันทึกการแก้ไข';
+                alert('ไม่สามารถเชื่อมต่อได้: ' + err.message);
+            });
+        }, true); // use capture to override default handler
+    }, 300);
+})();
