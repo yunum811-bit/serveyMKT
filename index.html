@@ -574,7 +574,11 @@
                 .then(r => r.ok ? r.json() : Promise.reject())
                 .then(user => {
                     // MD and admin don't need to fill forms - redirect
-                    if (user.role === 'md' || user.role === 'admin') {
+                    if (user.role === 'md') {
+                        window.location.href = '/dashboard.html';
+                        return;
+                    }
+                    if (user.role === 'admin') {
                         window.location.href = '/admin.html';
                         return;
                     }
@@ -610,8 +614,12 @@
             .then(data => {
                 if (data.token) {
                     localStorage.setItem('token', data.token);
-                    // MD and admin redirect to admin page
-                    if (data.user.role === 'md' || data.user.role === 'admin') {
+                    // MD redirect to dashboard, admin to admin page
+                    if (data.user.role === 'md') {
+                        window.location.href = '/dashboard.html';
+                        return;
+                    }
+                    if (data.user.role === 'admin') {
                         window.location.href = '/admin.html';
                         return;
                     }
