@@ -524,6 +524,16 @@ app.put('/api/reports/:id/reject', authMiddleware, mgrMiddleware, async (req, re
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// Send back report for editing (mgr/md/admin)
+app.put('/api/reports/:id/send-back', authMiddleware, mgrMiddleware, async (req, res) => {
+    try {
+        const { comment } = req.body;
+        const field = ['md', 'admin'].includes(req.user.role) ? '"mdComment"' : '"mgrComment"';
+        await run(`UPDATE reports SET status = 'rejected', ${field} = $1 WHERE id = $2`, [comment || 'กรุณาแก้ไขข้อมูล', req.params.id]);
+        res.json({ message: 'ส่งกลับให้พนักงานแก้ไขแล้ว' });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // === FORM OPTIONS (editable main questions) ===
 app.get('/api/form-options', async (req, res) => {
     try {

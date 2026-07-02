@@ -637,7 +637,7 @@
                 tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#888;padding:30px;">ไม่พบข้อมูลรายงาน</td></tr>';
                 return;
             }
-            const statusBadge = { pending: '<span style="background:#fff3e0;color:#f57c00;padding:2px 8px;border-radius:10px;font-size:0.75rem;">รอตรวจ</span>', mgr_approved: '<span style="background:#e3f2fd;color:#1976d2;padding:2px 8px;border-radius:10px;font-size:0.75rem;">รอ MD</span>', approved: '<span style="background:#e8f5e9;color:#388e3c;padding:2px 8px;border-radius:10px;font-size:0.75rem;">อนุมัติ</span>', rejected: '<span style="background:#fce4ec;color:#c62828;padding:2px 8px;border-radius:10px;font-size:0.75rem;">ไม่อนุมัติ</span>' };
+            const statusBadge = { pending: '<span style="background:#fff3e0;color:#f57c00;padding:2px 8px;border-radius:10px;font-size:0.75rem;">รอตรวจ</span>', mgr_approved: '<span style="background:#e3f2fd;color:#1976d2;padding:2px 8px;border-radius:10px;font-size:0.75rem;">รอ MD</span>', approved: '<span style="background:#e8f5e9;color:#388e3c;padding:2px 8px;border-radius:10px;font-size:0.75rem;">อนุมัติ</span>', rejected: '<span style="background:#fff3e0;color:#e65100;padding:2px 8px;border-radius:10px;font-size:0.75rem;">ส่งกลับ</span>' };
             const isAdmin = currentUser && currentUser.role === 'admin';
             tbody.innerHTML = reports.map(r => {
                 let badge = '';
@@ -684,7 +684,7 @@
                 if (!res.ok) return;
                 const r = await res.json();
 
-                const statusLabels = { pending: '⏳ รอ MGR ตรวจ', mgr_approved: '✅ MGR อนุมัติ - รอ MD', approved: '✅ อนุมัติแล้ว', rejected: '❌ ไม่อนุมัติ' };
+                const statusLabels = { pending: '⏳ รอ MGR ตรวจ', mgr_approved: '✅ MGR อนุมัติ - รอ MD', approved: '✅ อนุมัติแล้ว', rejected: '↩️ ส่งกลับแก้ไข' };
                 const statusColor = { pending: '#ff9800', mgr_approved: '#2196f3', approved: '#4caf50', rejected: '#e74c3c' };
                 const status = r.status || 'pending';
 
@@ -694,14 +694,16 @@
                     approvalButtons += `<div style="margin-top:12px;"><button onclick="editReport(${r.id})" style="width:100%;background:#ff9800;color:#fff;border:none;padding:10px;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:500;">✏️ แก้ไขรายงานนี้</button></div>`;
                 }
                 if (currentUser.role === 'mgr' && status === 'pending') {
-                    approvalButtons = `<div style="margin-top:16px;display:flex;gap:8px;">
+                    approvalButtons += `<div style="margin-top:16px;display:flex;gap:8px;">
                         <button onclick="approveReport(${r.id},'mgr')" style="flex:1;background:#4caf50;color:#fff;border:none;padding:10px;border-radius:8px;cursor:pointer;font-family:inherit;">✅ MGR อนุมัติ</button>
+                        <button onclick="sendBackReport(${r.id})" style="flex:1;background:#ff9800;color:#fff;border:none;padding:10px;border-radius:8px;cursor:pointer;font-family:inherit;">↩️ ส่งกลับแก้ไข</button>
                         <button onclick="rejectReport(${r.id})" style="flex:1;background:#e74c3c;color:#fff;border:none;padding:10px;border-radius:8px;cursor:pointer;font-family:inherit;">❌ ไม่อนุมัติ</button>
                     </div>`;
                 } else if (['md', 'admin'].includes(currentUser.role) && (status === 'pending' || status === 'mgr_approved')) {
-                    approvalButtons = `<div style="margin-top:16px;display:flex;gap:8px;">
+                    approvalButtons += `<div style="margin-top:16px;display:flex;gap:8px;">
                         ${status === 'pending' ? '<button onclick="approveReport('+r.id+',\'mgr\')" style="flex:1;background:#2196f3;color:#fff;border:none;padding:10px;border-radius:8px;cursor:pointer;font-family:inherit;">✅ MGR อนุมัติ</button>' : ''}
                         <button onclick="approveReport(${r.id},'md')" style="flex:1;background:#4caf50;color:#fff;border:none;padding:10px;border-radius:8px;cursor:pointer;font-family:inherit;">✅ MD อนุมัติ</button>
+                        <button onclick="sendBackReport(${r.id})" style="flex:1;background:#ff9800;color:#fff;border:none;padding:10px;border-radius:8px;cursor:pointer;font-family:inherit;">↩️ ส่งกลับแก้ไข</button>
                         <button onclick="rejectReport(${r.id})" style="flex:1;background:#e74c3c;color:#fff;border:none;padding:10px;border-radius:8px;cursor:pointer;font-family:inherit;">❌ ไม่อนุมัติ</button>
                     </div>`;
                 }
@@ -786,6 +788,23 @@
 
         function editReport(id) {
             window.location.href = '/?edit=' + id;
+        }
+
+        async function sendBackReport(id) {
+            const comment = prompt('ระบุสิ่งที่ต้องแก้ไข:');
+            if (!comment) return;
+            try {
+                const res = await fetch(API + '/api/reports/' + id + '/send-back', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({ comment })
+                });
+                const data = await res.json();
+                alert(data.message || data.error);
+                const modal = document.getElementById('detailModal');
+                if (modal) modal.remove();
+                loadReports();
+            } catch(e) { alert('เกิดข้อผิดพลาด'); }
         }
 
         function showDetailModal(title, content) {
