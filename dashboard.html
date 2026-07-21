@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Executive Dashboard - MARKETING SC</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Noto Sans Thai', sans-serif; background: #f0f2f5; min-height: 100vh; }
+        .navbar { background: linear-gradient(135deg, #667eea, #764ba2); color: #fff; padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; }
+        .navbar h1 { font-size: 1.1rem; }
+        .nav-links { display: flex; align-items: center; gap: 8px; }
+        .nav-links a { color: #fff; text-decoration: none; background: rgba(255,255,255,0.2); padding: 5px 12px; border-radius: 6px; font-size: 0.8rem; }
+        .nav-links a:hover { background: rgba(255,255,255,0.3); }
+        .btn-logout { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: #fff; padding: 5px 14px; border-radius: 6px; cursor: pointer; font-family: inherit; font-size: 0.8rem; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 16px; }
+
+        /* Filter */
+        .filter-bar { background: #fff; border-radius: 10px; padding: 12px 16px; margin-bottom: 16px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+        .filter-bar label { font-size: 0.8rem; color: #555; font-weight: 500; }
+        .filter-bar select { padding: 6px 10px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit; font-size: 0.85rem; }
+        .btn-filter { background: #6c63ff; color: #fff; border: none; padding: 7px 16px; border-radius: 6px; cursor: pointer; font-family: inherit; font-size: 0.85rem; }
+
+        /* KPI Cards */
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
+        .kpi-card { background: #fff; border-radius: 10px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); text-align: center; border-top: 3px solid #6c63ff; }
+        .kpi-card.blue { border-top-color: #2196f3; }
+        .kpi-card.green { border-top-color: #4caf50; }
+        .kpi-card.orange { border-top-color: #ff9800; }
+        .kpi-card.red { border-top-color: #e74c3c; }
+        .kpi-card.purple { border-top-color: #9c27b0; }
+        .kpi-card .kpi-value { font-size: 2rem; font-weight: 700; color: #333; }
+        .kpi-card .kpi-label { font-size: 0.75rem; color: #888; margin-top: 4px; }
+
+        /* Charts Grid */
+        .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+        .chart-card { background: #fff; border-radius: 10px; padding: 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); max-height: 280px; overflow: hidden; }
+        .chart-card canvas { max-height: 220px !important; }
+        .chart-card h3 { font-size: 0.85rem; color: #333; margin-bottom: 8px; font-weight: 600; }
+
+        /* Pipeline */
+        .pipeline { display: flex; align-items: center; justify-content: space-between; gap: 4px; margin-bottom: 16px; background: #fff; border-radius: 10px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+        .pipeline-stage { text-align: center; flex: 1; }
+        .pipeline-stage .stage-value { font-size: 1.5rem; font-weight: 700; color: #6c63ff; }
+        .pipeline-stage .stage-label { font-size: 0.7rem; color: #888; }
+        .pipeline-arrow { color: #ccc; font-size: 1.2rem; }
+
+        /* Ranking Table */
+        .ranking-card { background: #fff; border-radius: 10px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); margin-bottom: 16px; }
+        .ranking-card h3 { font-size: 0.9rem; color: #333; margin-bottom: 12px; }
+        .ranking-table { width: 100%; border-collapse: collapse; }
+        .ranking-table th { background: #f8f9fa; padding: 8px 10px; font-size: 0.8rem; text-align: left; color: #555; }
+        .ranking-table td { padding: 8px 10px; font-size: 0.85rem; border-bottom: 1px solid #f0f0f0; }
+        .ranking-table tr:hover td { background: #f9f8ff; }
+
+        /* Activity Cards */
+        .activity-section { margin-bottom: 16px; }
+        .activity-section h3 { font-size: 0.9rem; color: #333; margin-bottom: 12px; }
+        .activity-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+        .activity-card { background: #fff; border-radius: 10px; padding: 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); border-left: 4px solid #6c63ff; }
+        .activity-card.hot { border-left-color: #e74c3c; }
+        .activity-card.warm { border-left-color: #ff9800; }
+        .activity-card .ac-header { display: flex; justify-content: space-between; margin-bottom: 6px; }
+        .activity-card .ac-date { font-size: 0.75rem; color: #888; }
+        .activity-card .ac-officer { font-size: 0.75rem; color: #6c63ff; font-weight: 500; }
+        .activity-card .ac-company { font-size: 0.9rem; font-weight: 600; color: #333; }
+        .activity-card .ac-detail { font-size: 0.8rem; color: #666; margin-top: 4px; }
+        .activity-card .ac-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
+        .activity-card .ac-tags span { font-size: 0.7rem; padding: 2px 6px; border-radius: 8px; background: #f0f0f0; color: #555; }
+        .activity-card .ac-tags .tag-hot { background: #ffe0e0; color: #d32f2f; }
+        .activity-card .ac-tags .tag-product { background: #e3f2fd; color: #1976d2; }
+        .activity-card .ac-img { margin-top: 6px; border-radius: 6px; max-width: 100%; max-height: 80px; object-fit: cover; cursor: pointer; }
+
+        /* Gallery */
+        .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 6px; }
+        .gallery-grid img { width: 100%; height: 90px; object-fit: cover; border-radius: 6px; cursor: pointer; transition: transform 0.2s; }
+        .gallery-grid img:hover { transform: scale(1.05); }
+
+        /* Login */
+        .login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+        .login-box { background: #fff; border-radius: 16px; padding: 36px; width: 90%; max-width: 380px; }
+        .login-box h2 { text-align: center; margin-bottom: 6px; color: #333; font-size: 1.2rem; }
+        .login-box p { text-align: center; color: #888; margin-bottom: 20px; font-size: 0.85rem; }
+        .login-box form { width: 100%; }
+        .login-box input { width: 100%; padding: 10px 14px; border: 2px solid #e0e0e0; border-radius: 8px; margin-bottom: 10px; font-family: inherit; font-size: 0.9rem; outline: none; }
+        .login-box input:focus { border-color: #6c63ff; }
+        .btn-login { width: 100%; background: #6c63ff; color: #fff; border: none; padding: 12px; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; font-family: inherit; }
+        .login-error { color: #e74c3c; font-size: 0.8rem; text-align: center; margin-top: 8px; }
+        .hidden { display: none !important; }
+
+        @media (max-width: 768px) {
+            .charts-row { grid-template-columns: 1fr; }
+            .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+            .pipeline { flex-wrap: wrap; }
+            .activity-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login -->
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-box">
+            <h2>MARKETING SC</h2>
+            <p>Executive Dashboard</p>
+            <form id="dashLoginForm">
+                <input type="text" id="loginUsername" placeholder="ชื่อผู้ใช้">
+                <input type="password" id="loginPassword" placeholder="รหัสผ่าน">
+                <button type="submit" class="btn-login">เข้าสู่ระบบ</button>
+            </form>
+            <p class="login-error hidden" id="loginError"></p>
+        </div>
+    </div>
+
+    <!-- Main -->
+    <div id="mainApp" class="hidden">
+        <nav class="navbar">
+            <h1>📊 Executive Dashboard</h1>
+            <div class="nav-links">
+                <a href="/">📝 ฟอร์ม</a>
+                <a href="/admin.html" id="adminLink" style="display:none;">⚙️ Admin</a>
+                <span id="currentUser" style="font-size:0.8rem;"></span>
+                <button class="btn-logout" onclick="logout()">ออกจากระบบ</button>
+            </div>
+        </nav>
+
+        <div class="container">
+            <!-- Filter -->
+            <div class="filter-bar">
+                <label>เดือน:</label>
+                <select id="filterMonth">
+                    <option value="">ทั้งหมด</option>
+                    <option value="1">ม.ค.</option><option value="2">ก.พ.</option><option value="3">มี.ค.</option>
+                    <option value="4">เม.ย.</option><option value="5">พ.ค.</option><option value="6">มิ.ย.</option>
+                    <option value="7">ก.ค.</option><option value="8">ส.ค.</option><option value="9">ก.ย.</option>
+                    <option value="10">ต.ค.</option><option value="11">พ.ย.</option><option value="12">ธ.ค.</option>
+                </select>
+                <label>ปี:</label>
+                <select id="filterYear"><option value="2026">2026</option><option value="2025">2025</option></select>
+                <span id="officerFilterWrap" style="display:none;">
+                    <label>พนักงาน:</label>
+                    <select id="filterOfficer"><option value="">ทุกคน</option></select>
+                </span>
+                <button class="btn-filter" onclick="loadDashboard()">🔍 ดูข้อมูล</button>
+            </div>
+
+            <!-- KPI Cards -->
+            <div class="kpi-grid">
+                <div class="kpi-card blue"><div class="kpi-value" id="kpiVisit">0</div><div class="kpi-label">📍 Visit ทั้งหมด</div></div>
+                <div class="kpi-card green"><div class="kpi-value" id="kpiNewCustomer">0</div><div class="kpi-label">🆕 ลูกค้าใหม่</div></div>
+                <div class="kpi-card orange"><div class="kpi-value" id="kpiContract">0</div><div class="kpi-label">📝 เซ็นสัญญา</div></div>
+                <div class="kpi-card red"><div class="kpi-value" id="kpiHot">0</div><div class="kpi-label">🔥 Hot Prospect</div></div>
+                <div class="kpi-card purple"><div class="kpi-value" id="kpiRating">0</div><div class="kpi-label">⭐ คะแนนรวม</div></div>
+                <div class="kpi-card"><div class="kpi-value" id="kpiCompanies">0</div><div class="kpi-label">🏢 บริษัทที่เข้าพบ</div></div>
+            </div>
+
+            <!-- Sales Pipeline -->
+            <div class="pipeline">
+                <div class="pipeline-stage"><div class="stage-value" id="pipeLead">0</div><div class="stage-label">Lead</div></div>
+                <div class="pipeline-arrow">→</div>
+                <div class="pipeline-stage"><div class="stage-value" id="pipeVisit">0</div><div class="stage-label">เข้าพบ</div></div>
+                <div class="pipeline-arrow">→</div>
+                <div class="pipeline-stage"><div class="stage-value" id="pipeHot">0</div><div class="stage-label">Hot Prospect</div></div>
+                <div class="pipeline-arrow">→</div>
+                <div class="pipeline-stage"><div class="stage-value" id="pipeProposal">0</div><div class="stage-label">เสนอราคา</div></div>
+                <div class="pipeline-arrow">→</div>
+                <div class="pipeline-stage"><div class="stage-value" id="pipeContract">0</div><div class="stage-label">เซ็นสัญญา</div></div>
+            </div>
+
+            <!-- Charts Row 1 -->
+            <div class="charts-row">
+                <div class="chart-card"><h3>📈 Visit รายวัน</h3><canvas id="dailyChart"></canvas></div>
+                <div class="chart-card"><h3>🎯 ประเภทงาน</h3><canvas id="typeChart"></canvas></div>
+            </div>
+
+            <!-- Charts Row 2 -->
+            <div class="charts-row">
+                <div class="chart-card"><h3>💼 ผลิตภัณฑ์</h3><canvas id="productChart"></canvas></div>
+                <div class="chart-card"><h3>📍 จังหวัด</h3><canvas id="provinceChart"></canvas></div>
+            </div>
+
+            <!-- Ranking -->
+            <div class="ranking-card">
+                <h3>🏆 Ranking พนักงาน</h3>
+                <table class="ranking-table">
+                    <thead><tr><th>พนักงาน</th><th>Visit</th><th>Hot</th><th>เซ็นสัญญา</th><th>คะแนนรวม</th></tr></thead>
+                    <tbody id="rankingBody"></tbody>
+                </table>
+            </div>
+
+            <!-- Activity Cards -->
+            <div class="activity-section">
+                <h3>📋 กิจกรรมล่าสุด</h3>
+                <div class="activity-grid" id="activityGrid"></div>
+            </div>
+
+            <!-- Photo Gallery -->
+            <div class="chart-card" style="margin-top:16px;">
+                <h3>📷 รูปภาพกิจกรรม</h3>
+                <div class="gallery-grid" id="galleryGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let token = localStorage.getItem('token');
+        let currentUser = null;
+        let allReports = [];
+
+        document.getElementById('dashLoginForm').addEventListener('submit', e => { e.preventDefault(); login(); });
+        if (token) checkAuth();
+
+        async function checkAuth() {
+            try {
+                const res = await fetch('/api/auth/me', { headers: { 'Authorization': 'Bearer ' + token } });
+                if (res.ok) { currentUser = await res.json(); showApp(); }
+                else { localStorage.removeItem('token'); token = null; }
+            } catch(e) {}
+        }
+        async function login() {
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const err = document.getElementById('loginError');
+            err.classList.add('hidden');
+            if (!username || !password) { err.textContent = 'กรุณากรอกข้อมูล'; err.classList.remove('hidden'); return; }
+            try {
+                const res = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, password }) });
+                const data = await res.json();
+                if (res.ok) { token = data.token; currentUser = data.user; localStorage.setItem('token', token); showApp(); }
+                else { err.textContent = data.error; err.classList.remove('hidden'); }
+            } catch(e) { err.textContent = 'ไม่สามารถเชื่อมต่อได้'; err.classList.remove('hidden'); }
+        }
+        function logout() { localStorage.removeItem('token'); window.location.href = '/'; }
+
+        function showApp() {
+            document.getElementById('loginOverlay').classList.add('hidden');
+            document.getElementById('mainApp').classList.remove('hidden');
+            document.getElementById('currentUser').textContent = currentUser.fullName;
+            if (['admin','md'].includes(currentUser.role)) {
+                document.getElementById('adminLink').style.display = 'inline-block';
+                document.getElementById('officerFilterWrap').style.display = 'inline';
+            }
+            const now = new Date();
+            document.getElementById('filterMonth').value = now.getMonth() + 1;
+            document.getElementById('filterYear').value = now.getFullYear();
+            loadDashboard();
+        }
+
+        async function loadDashboard() {
+            const month = document.getElementById('filterMonth').value;
+            const year = document.getElementById('filterYear').value;
+            const officer = document.getElementById('filterOfficer')?.value || '';
+            let url = '/api/reports?year=' + year;
+            if (month) url += '&month=' + month;
+            if (officer) url += '&officer=' + encodeURIComponent(officer);
+            try {
+                const res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + token } });
+                allReports = await res.json();
+                updateKPI();
+                updatePipeline();
+                updateCharts();
+                updateRanking();
+                updateActivity();
+                updateGallery();
+                updateOfficerFilter();
+            } catch(e) { console.error(e); }
+        }
+
+        function updateOfficerFilter() {
+            const sel = document.getElementById('filterOfficer');
+            if (!sel || sel.options.length > 1) return;
+            const officers = [...new Set(allReports.map(r => r.officer))].sort();
+            officers.forEach(name => { const o = document.createElement('option'); o.value = name; o.textContent = name; sel.appendChild(o); });
+        }
+
+        function updateKPI() {
+            const r = allReports;
+            document.getElementById('kpiVisit').textContent = r.length;
+            document.getElementById('kpiNewCustomer').textContent = r.filter(x => x.objectives && x.objectives.includes('ใหม่')).length;
+            document.getElementById('kpiContract').textContent = r.filter(x => x.objectives && x.objectives.includes('สัญญา')).length;
+            document.getElementById('kpiHot').textContent = r.filter(x => x.dealProbability && x.dealProbability.includes('สูง')).length;
+            const totalRating = r.reduce((sum, x) => sum + (x.successRating || 0), 0);
+            document.getElementById('kpiRating').textContent = totalRating;
+            document.getElementById('kpiCompanies').textContent = new Set(r.map(x => x.companyName)).size;
+        }
+
+        function updatePipeline() {
+            const r = allReports;
+            document.getElementById('pipeLead').textContent = r.length;
+            document.getElementById('pipeVisit').textContent = r.filter(x => x.objectives && (x.objectives.includes('Visit') || x.objectives.includes('พบ'))).length;
+            document.getElementById('pipeHot').textContent = r.filter(x => x.dealProbability && x.dealProbability.includes('สูง')).length;
+            document.getElementById('pipeProposal').textContent = r.filter(x => x.nextSteps && x.nextSteps.includes('เงื่อนไข')).length;
+            document.getElementById('pipeContract').textContent = r.filter(x => x.objectives && x.objectives.includes('สัญญา')).length;
+        }
+
+        let charts = {};
+        function updateCharts() {
+            // Daily chart
+            const dailyData = {};
+            allReports.forEach(r => { dailyData[r.workDate] = (dailyData[r.workDate] || 0) + 1; });
+            const dates = Object.keys(dailyData).sort().slice(-14);
+            if (charts.daily) charts.daily.destroy();
+            charts.daily = new Chart(document.getElementById('dailyChart'), {
+                type: 'bar', data: { labels: dates.map(d => d.substring(5)), datasets: [{ label: 'Visit', data: dates.map(d => dailyData[d]), backgroundColor: '#6c63ff', borderRadius: 4 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+            });
+
+            // Type chart (objectives)
+            const typeData = {};
+            allReports.forEach(r => { if (r.objectives) r.objectives.split(', ').forEach(o => { const short = o.split('(')[0].trim().substring(0,12); typeData[short] = (typeData[short]||0)+1; }); });
+            if (charts.type) charts.type.destroy();
+            charts.type = new Chart(document.getElementById('typeChart'), {
+                type: 'doughnut', data: { labels: Object.keys(typeData), datasets: [{ data: Object.values(typeData), backgroundColor: ['#6c63ff','#ff6384','#36a2eb','#ffce56','#4bc0c0','#9966ff','#ff9f40','#c9cbcf'] }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { font: { size: 9 } } } } }
+            });
+
+            // Product chart
+            const prodData = {};
+            allReports.forEach(r => { if (r.products) r.products.split(', ').forEach(p => { if(p) prodData[p] = (prodData[p]||0)+1; }); });
+            const prodLabels = Object.keys(prodData).sort((a,b) => prodData[b]-prodData[a]);
+            if (charts.product) charts.product.destroy();
+            charts.product = new Chart(document.getElementById('productChart'), {
+                type: 'bar', data: { labels: prodLabels, datasets: [{ label: 'จำนวน', data: prodLabels.map(l => prodData[l]), backgroundColor: '#36a2eb', borderRadius: 4 }] },
+                options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+            });
+
+            // Province chart
+            const provData = {};
+            allReports.forEach(r => { if(r.province) provData[r.province] = (provData[r.province]||0)+1; });
+            const provLabels = Object.keys(provData).sort((a,b) => provData[b]-provData[a]);
+            if (charts.province) charts.province.destroy();
+            charts.province = new Chart(document.getElementById('provinceChart'), {
+                type: 'bar', data: { labels: provLabels, datasets: [{ label: 'Visit', data: provLabels.map(l => provData[l]), backgroundColor: '#4caf50', borderRadius: 4 }] },
+                options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+            });
+        }
+
+        function updateRanking() {
+            const officers = {};
+            allReports.forEach(r => {
+                if (!officers[r.officer]) officers[r.officer] = { visit: 0, hot: 0, contract: 0, rating: 0 };
+                officers[r.officer].visit++;
+                if (r.dealProbability && r.dealProbability.includes('สูง')) officers[r.officer].hot++;
+                if (r.objectives && r.objectives.includes('สัญญา')) officers[r.officer].contract++;
+                officers[r.officer].rating += (r.successRating || 0);
+            });
+            const sorted = Object.entries(officers).sort((a,b) => b[1].rating - a[1].rating);
+            document.getElementById('rankingBody').innerHTML = sorted.map(([name, d]) =>
+                `<tr><td>${name}</td><td>${d.visit}</td><td>${d.hot}</td><td>${d.contract}</td><td>${d.rating}</td></tr>`
+            ).join('') || '<tr><td colspan="5" style="text-align:center;color:#888;">ไม่มีข้อมูล</td></tr>';
+        }
+
+        function updateActivity() {
+            const recent = allReports.slice(0, 12);
+            document.getElementById('activityGrid').innerHTML = recent.map(r => {
+                const isHot = r.dealProbability && r.dealProbability.includes('สูง');
+                const isWarm = r.dealProbability && r.dealProbability.includes('ปานกลาง');
+                const imgSrc = r.photo1 && r.photo1.startsWith('http') ? r.photo1 : '';
+                return `<div class="activity-card ${isHot?'hot':isWarm?'warm':''}">
+                    <div class="ac-header"><span class="ac-date">📅 ${r.workDate}</span><span class="ac-officer">👤 ${r.officer}</span></div>
+                    <div class="ac-company">🏢 ${r.companyName}</div>
+                    <div class="ac-detail">📌 ${r.objectives ? r.objectives.substring(0,40) : '-'}</div>
+                    <div class="ac-tags">
+                        ${r.province ? '<span>📍'+r.province+'</span>' : ''}
+                        ${r.products ? '<span class="tag-product">'+r.products.split(',')[0].trim()+'</span>' : ''}
+                        ${isHot ? '<span class="tag-hot">🔥 Hot</span>' : ''}
+                    </div>
+                    ${imgSrc ? '<img class="ac-img" src="'+imgSrc+'" onclick="window.open(this.src)">' : ''}
+                </div>`;
+            }).join('') || '<p style="color:#888;">ไม่มีข้อมูล</p>';
+        }
+
+        function updateGallery() {
+            const photos = [];
+            allReports.forEach(r => {
+                if (r.photo1 && r.photo1.startsWith('http')) photos.push(r.photo1);
+                if (r.photo2 && r.photo2.startsWith('http')) photos.push(r.photo2);
+            });
+            document.getElementById('galleryGrid').innerHTML = photos.slice(0, 20).map(url =>
+                `<img src="${url}" onclick="window.open(this.src)">`
+            ).join('') || '<p style="color:#888;">ยังไม่มีรูปภาพ</p>';
+        }
+    </script>
+</body>
+</html>
