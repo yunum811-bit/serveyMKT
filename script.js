@@ -378,7 +378,6 @@ function loadCustomQuestions() {
         .catch(e => console.error('Failed to load custom questions:', e));
 }
 
-<<<<<<< HEAD
 // Load custom questions on page load (called by initForm after login)
 // loadCustomQuestions() is triggered via initForm — not auto-run here
 
@@ -393,13 +392,6 @@ async function initForm() {
 // initForm is called by index.html after login/auth check succeeds
 // Expose it globally so HTML can call it
 window.initForm = initForm;
-=======
-// Load custom questions on page load
-loadCustomQuestions();
-
-// Load form options then user config (user config overrides global)
-loadFormOptions().then(() => loadUserFormConfig());
->>>>>>> 3732cf523b74ef83d68d4c852bad7784b9a0011f
 
 async function loadUserFormConfig() {
     const token = localStorage.getItem('token');

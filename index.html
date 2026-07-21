@@ -527,15 +527,9 @@
                 <label class="section-title">ผู้ตรวจสอบ / ผู้บังคับบัญชา <span class="req">*</span></label>
                 <div class="radio-group">
                     <label class="radio-item">
-<<<<<<< HEAD
                         <input type="radio" name="supervisor" value="นางสาว มนัสนันท์ ตลับเพชร" required>
                         <span class="radio-custom"></span>
                         <span>นางสาว มนัสนันท์ ตลับเพชร</span>
-=======
-                        <input type="radio" name="supervisor" value="นางสาว มนัสสนันท์ ตลับเพชร" required>
-                        <span class="radio-custom"></span>
-                        <span>นางสาว มนัสสนันท์ ตลับเพชร</span>
->>>>>>> 3732cf523b74ef83d68d4c852bad7784b9a0011f
                     </label>
                     <label class="radio-item">
                         <input type="radio" name="supervisor" value="นาย ธีรวัฒน์ ขำเมือง">
@@ -594,11 +588,8 @@
                     if (user.role === 'admin' || user.role === 'md') {
                         document.getElementById('adminLink').style.display = 'inline-block';
                     }
-<<<<<<< HEAD
                     // Load form options AFTER form is visible
                     if (window.initForm) window.initForm();
-=======
->>>>>>> 3732cf523b74ef83d68d4c852bad7784b9a0011f
                 })
                 .catch(() => {
                     localStorage.removeItem('token');
@@ -640,11 +631,8 @@
                     if (data.user.role === 'mgr') {
                         document.getElementById('adminLink').style.display = 'inline-block';
                     }
-<<<<<<< HEAD
                     // Load form options AFTER form is visible
                     if (window.initForm) window.initForm();
-=======
->>>>>>> 3732cf523b74ef83d68d4c852bad7784b9a0011f
                 } else {
                     errEl.textContent = data.error || 'เข้าสู่ระบบไม่สำเร็จ';
                 }
