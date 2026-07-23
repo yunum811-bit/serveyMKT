@@ -434,10 +434,7 @@ async function loadUserFormConfig() {
         }
 
         // Apply per-user custom options (overrides global form-options)
-<<<<<<< HEAD
         // Skip supervisor here — role-based override below will handle it
-=======
->>>>>>> 3732cf523b74ef83d68d4c852bad7784b9a0011f
         if (data.customOptions && Object.keys(data.customOptions).length > 0) {
             const fieldMap = { officers: 'officer', objectives: 'objective', leadSources: 'leadSource', products: 'product', provinces: 'province', competitors: 'competitor', supervisors: 'supervisor', nextSteps: 'nextStep' };
             const hasOtherFields = ['leadSource', 'product', 'province', 'competitor', 'nextStep', 'objective'];
@@ -446,10 +443,7 @@ async function loadUserFormConfig() {
             for (const [key, options] of Object.entries(data.customOptions)) {
                 const name = fieldMap[key];
                 if (!name || !options.length) continue;
-<<<<<<< HEAD
                 if (name === 'supervisor') continue; // role-based override handles this
-=======
->>>>>>> 3732cf523b74ef83d68d4c852bad7784b9a0011f
                 const hasOther = hasOtherFields.includes(name);
                 if (radioFields.includes(name)) {
                     updateRadioGroup(name, options, hasOther);
@@ -459,27 +453,15 @@ async function loadUserFormConfig() {
             }
         }
 
-<<<<<<< HEAD
         // Set supervisor based on role (ALWAYS runs last — final authority)
         if (me.role === 'user') {
-            updateRadioGroup('supervisor', ['นางสาว มนัสนันท์ ตลับเพชร'], false);
-            // Auto-select the only option
+            updateRadioGroup('supervisor', ['นางสาว มนัสสนันท์ ตลับเพชร'], false);
             const radio = document.querySelector('input[name="supervisor"]');
             if (radio) radio.checked = true;
         } else if (me.role === 'mgr') {
             updateRadioGroup('supervisor', ['นาย ธีรวัฒน์ ขำเมือง'], false);
-            // Auto-select the only option
             const radio = document.querySelector('input[name="supervisor"]');
             if (radio) radio.checked = true;
-=======
-        // Set supervisor based on role (LAST - always overrides)
-        if (!data.customOptions || !data.customOptions.supervisors) {
-            if (me.role === 'user') {
-                updateRadioGroup('supervisor', ['นางสาว มนัสสนันท์ ตลับเพชร'], false);
-            } else if (me.role === 'mgr') {
-                updateRadioGroup('supervisor', ['นาย ธีรวัฒน์ ขำเมือง'], false);
-            }
->>>>>>> 3732cf523b74ef83d68d4c852bad7784b9a0011f
         }
     } catch(e) { /* use defaults */ }
 }
